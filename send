@@ -1,0 +1,15 @@
+#!/bin/bash
+#PBS -q development
+#PBS -N graphTest
+#PBS -l select=8:ncpus=1
+#PBS -l place=free
+#PBS -V
+echo "Starting..."
+
+cd $PBS_O_WORKDIR
+
+hostname 
+
+mpirun -np 8 ./a.out numbers.txt
+
+echo "Job is done!!!"
