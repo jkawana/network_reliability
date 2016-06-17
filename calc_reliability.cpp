@@ -88,23 +88,23 @@ int main(int argc, char *argv[])
 bool Dijkstra(int source, int destination, Graph G, int diameterConstraint)
 {
 	int s = source;
-	int u = s; // u is the vertex with smallest Lamda, which at beginning is s.
+	int u = s; // u is the vertex with smallest Lambda, which at beginning is s.
 	bool uIsSet = true; //true because u is set to s.
 	int totalVertices = G.getTotalVertices();
 	int numOfVerticesToVisit = totalVertices;
 	bool *T = new bool[totalVertices];
 	int *father = new int[totalVertices];
-	int *Lamda = new int[totalVertices];
+	int *Lambda = new int[totalVertices];
 	for (int i = 0; i < totalVertices; i++)
 	{
 		T[i] = true; // all the vertices are eligible to be visited;
 		father[i] = -1; // at the beginning every vertex's father is -1;
-		Lamda[i] = INT_MAX; // every vertex is assumed to be far away from s.
+		Lambda[i] = INT_MAX; // every vertex is assumed to be far away from s.
 	}
-	Lamda[s] = 0; // s is at distance 0 of itself.
+	Lambda[s] = 0; // s is at distance 0 of itself.
 	while (1)
 	{
-		/* set u to the vertex with the smallest Lamda. */
+		/* set u to the vertex with the smallest Lambda. */
 		for (int i = 0; i < totalVertices; i++)
 		{
 			if (!uIsSet && T[i])
@@ -112,18 +112,18 @@ bool Dijkstra(int source, int destination, Graph G, int diameterConstraint)
 				u = i;	//to set u to the first availible vertex.
 				uIsSet = true;
 			}
-			else if (uIsSet && T[i] && Lamda[i] < Lamda[u])
-				u = i;	//to set u to the smallest Lamda (aka distance from source).
+			else if (uIsSet && T[i] && Lambda[i] < Lambda[u])
+				u = i;	//to set u to the smallest Lambda (aka distance from source).
 		}
 
 		node* adjnode = G.headnodes[u].next;
 		while (adjnode != NULL)
 		{
 			if (abs(G.edge[adjnode->edgeID].determined) == 1 &&
-				Lamda[u] != INT_MAX && T[adjnode->vertex] &&
-				(Lamda[adjnode->vertex] > Lamda[u] + adjnode->edgeWeight))
+				Lambda[u] != INT_MAX && T[adjnode->vertex] &&
+				(Lambda[adjnode->vertex] > Lambda[u] + adjnode->edgeWeight))
 			{
-				Lamda[adjnode->vertex] = Lamda[u] + adjnode->edgeWeight;
+				Lambda[adjnode->vertex] = Lambda[u] + adjnode->edgeWeight;
 				father[adjnode->vertex] = u;
 			}
 			adjnode = adjnode->next;
@@ -137,12 +137,12 @@ bool Dijkstra(int source, int destination, Graph G, int diameterConstraint)
 
 	/* Dijkstra Results: */
 	int next = father[destination];
-	if (next != -1 && Lamda[destination] <= diameterConstraint)
+	if (next != -1 && Lambda[destination] <= diameterConstraint)
 	{
 		/* delete dynamically allocated variables. */
 		delete[] T;
 		delete[] father;
-		delete[] Lamda;
+		delete[] Lambda;
 		return true;
 	}
 	else
@@ -150,7 +150,7 @@ bool Dijkstra(int source, int destination, Graph G, int diameterConstraint)
 		/* delete dynamically allocated variables. */
 		delete[] T;
 		delete[] father;
-		delete[] Lamda;
+		delete[] Lambda;
 		return false;
 	}
 
