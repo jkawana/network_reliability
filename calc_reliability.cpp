@@ -8,7 +8,7 @@
 
 bool Dijkstra(int source, int destination, Graph G, int diameterConstraint);
 
-const double totalTrials = 1000000000;
+const double totalTrials = 10000000  ;
 
 int main(int argc, char *argv[])
 {
@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
 	clock_t startTime = clock();
 
 	MPI_Init(&argc, &argv);
-	int world_rank;
+	int world_rank;   	//id like to change this to my rank
 	MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 	int world_size;
 	MPI_Comm_rank(MPI_COMM_WORLD, &world_size);
@@ -26,8 +26,11 @@ int main(int argc, char *argv[])
 	double diameterConstraint = 8; // change accordingly
 	double totalNumOfVertices = 25; //change accordingly. 
 	int source = 0; //change accordingly
-	int destination = 18;
+	double destination = 18;
 	double reliability;
+
+	//maybe we should make these input varible so we can have a test file to run it on?	
+
 	double totalSuccess = 0;
 	srand(time(NULL));
 	double randomNum;
@@ -51,9 +54,11 @@ int main(int argc, char *argv[])
 				G.edge[j].determined = 1;
 		}
 		if ( Dijkstra(source, destination, G, diameterConstraint) ) 
-			totalSuccess++; 
+		{	totalSuccess++;  
+}
 	}
 	
+	printf("%f\n",totalSuccess); 
 	double num = 1;
 	double totalNum = 0;
 	end = MPI_Wtime();
@@ -68,7 +73,8 @@ int main(int argc, char *argv[])
 		cout << "Total number of proccessors = " << totalNum << endl;
 		cout << "Each Proccessor performs " << totalTrials << "  Trials" << endl;
 		cout << "Total number of trials = " << (totalTrials * totalNum) << endl;
-		reliability = sum / (totalTrials * world_size);
+		printf("sum: %f,    totalTrials: %f,   world_size: %f",sum, totalTrials, totalNum);	
+	reliability = sum / (totalTrials * totalNum);
 		cout << "Monte Carlo Result: " << endl;
 		cout << "5x5grid" << endl; //change
 		cout << "Diameter Constraint: " << diameterConstraint << endl;
