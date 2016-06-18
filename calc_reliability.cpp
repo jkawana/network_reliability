@@ -13,29 +13,29 @@ const double totalTrials = 10000000  ;
 int main(int argc, char *argv[])
 {
 
-	clock_t startTime = clock();
+        clock_t startTime = clock(); //do we use this?
 
 	MPI_Init(&argc, &argv);
-	int world_rank;   	//id like to change this to my rank
-	MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-	int world_size;
-	MPI_Comm_rank(MPI_COMM_WORLD, &world_size);
+	int my_rank;
+	MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+	int num_procs;
+	MPI_Comm_size(MPI_COMM_WORLD, &num_procs);
 	
 	//to test monte carlo w. dijkstra
 	double expectedR = .234521; //change accordingly. 
 	double diameterConstraint = 8; // change accordingly
 	double totalNumOfVertices = 25; //change accordingly. 
-	int source = 0; //change accordingly
-	double destination = 18;
+	int source = 0; 
+	double destination = 18; //change accordingly
+
+	//To do: read expectedR, diameter, |V|, destination in from file
+       
 	double reliability;
-
-	//maybe we should make these input varible so we can have a test file to run it on?	
-
 	double totalSuccess = 0;
-	srand(time(NULL));
+	srand(time(NULL)*my_rank);
 	double randomNum;
 	double sum = 0;
-	double start, end, totaltime, outputtime, outputtimein;
+	double start, end, totaltime, outputtime;
 	Graph G(totalNumOfVertices);
 	G.create();
 	
@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
 	{
 		for ( int j = 0; j < G.getTotalEdges(); j++ )
 		{
-			randomNum = rand() % 100 + 1;
+		        randomNum = rand() % 100 + 1;
 			if ( randomNum > G.edge[j].successRate * 100)
 				G.edge[j].determined = 0;
 			else
@@ -58,23 +58,23 @@ int main(int argc, char *argv[])
 }
 	}
 	
-	printf("%f\n",totalSuccess); 
-	double num = 1;
-	double totalNum = 0;
+       	printf("Processor: %d     totalSuccess: %f\n",my_rank,totalSuccess); 
+
 	end = MPI_Wtime();
 	totaltime = end - start;
 	
 	MPI_Reduce(&totaltime, &outputtime, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 	MPI_Reduce(&totalSuccess, &sum, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-	MPI_Reduce(&num, &totalNum, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
-	if (world_rank == 0)
+	if (my_rank == 0)
 	{
-		cout << "Total number of proccessors = " << totalNum << endl;
+		cout << "Total number of proccessors = " << num_procs << endl;
+		cout << "Total number of hits = " << sum << endl;
 		cout << "Each Proccessor performs " << totalTrials << "  Trials" << endl;
-		cout << "Total number of trials = " << (totalTrials * totalNum) << endl;
-		printf("sum: %f,    totalTrials: %f,   world_size: %f",sum, totalTrials, totalNum);	
-	reliability = sum / (totalTrials * totalNum);
+		cout << "Total number of trials = " << (totalTrials * num_procs) << endl;
+		
+		reliability = sum / (totalTrials * num_procs);
+		
 		cout << "Monte Carlo Result: " << endl;
 		cout << "5x5grid" << endl; //change
 		cout << "Diameter Constraint: " << diameterConstraint << endl;
@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
 		cout << "Time: " << outputtime << endl;
 	}
 
-	MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Barrier(MPI_COMM_WORLD); //what does this do?
 	MPI_Finalize();
 
 	return 0;
@@ -108,6 +108,8 @@ bool Dijkstra(int source, int destination, Graph G, int diameterConstraint)
 		Lambda[i] = INT_MAX; // every vertex is assumed to be far away from s.
 	}
 	Lambda[s] = 0; // s is at distance 0 of itself.
+
+	//To do: Change loop structure
 	while (1)
 	{
 		/* set u to the vertex with the smallest Lambda. */
@@ -115,7 +117,7 @@ bool Dijkstra(int source, int destination, Graph G, int diameterConstraint)
 		{
 			if (!uIsSet && T[i])
 			{
-				u = i;	//to set u to the first availible vertex.
+				u = i;	//to set u to the first available vertex.
 				uIsSet = true;
 			}
 			else if (uIsSet && T[i] && Lambda[i] < Lambda[u])
@@ -135,7 +137,7 @@ bool Dijkstra(int source, int destination, Graph G, int diameterConstraint)
 			adjnode = adjnode->next;
 		}
 		uIsSet = false; // to indicate u is not set.
-		T[u] = false; //u is not availible to be visited (aka. to delete u from T).
+		T[u] = false; //u is not available to be visited (aka. to delete u from T).
 		numOfVerticesToVisit--;
 		if (numOfVerticesToVisit == 0)
 			break;
