@@ -4,6 +4,7 @@
 #include "graph.h"
 #include <stdlib.h>
 #include <time.h>
+#include <set>
 #include "graph.cpp"
 
 bool Dijkstra(int source, int destination, Graph G, int diameterConstraint);
@@ -22,11 +23,16 @@ int main(int argc, char *argv[])
 	MPI_Comm_size(MPI_COMM_WORLD, &num_procs);
 	
 	//to test monte carlo w. dijkstra
-	double expectedR = .234521; //change accordingly. 
+
+	//	double expectedR = .234521; //change accordingly. 
+	double expectedR = .997224; //change accordingly. 
+
 	double diameterConstraint = 8; // change accordingly
 	double totalNumOfVertices = 25; //change accordingly. 
 	int source = 0; 
-	double destination = 18; //change accordingly
+
+	//	double destination = 18; //change accordingly
+	double destination = 12; //change accordingly
 
 	//To do: read expectedR, diameter, |V|, destination in from file
        
@@ -80,8 +86,8 @@ int main(int argc, char *argv[])
 		cout << "Diameter Constraint: " << diameterConstraint << endl;
 		cout << "Source Node: " << source << endl;
 		cout << "Destination Node: " << destination << endl;
-		cout << "Reliability = " << reliability << endl;
-		cout << "Expected Reliability" << expectedR << endl;
+		cout << "Reliability: " << reliability << endl;
+		cout << "Expected Reliability: " << expectedR << endl;
 		cout << "Difference: " << (reliability - expectedR) << endl;
 		cout << "Time: " << outputtime << endl;
 	}
@@ -91,75 +97,78 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
+
 bool Dijkstra(int source, int destination, Graph G, int diameterConstraint)
 {
-	int s = source;
-	int u = s; // u is the vertex with smallest Lambda, which at beginning is s.
-	bool uIsSet = true; //true because u is set to s.
-	int totalVertices = G.getTotalVertices();
-	int numOfVerticesToVisit = totalVertices;
-	bool *T = new bool[totalVertices];
-	int *father = new int[totalVertices];
-	int *Lambda = new int[totalVertices];
-	for (int i = 0; i < totalVertices; i++)
+  	
+    set<int> T; //the set of verticies used to make sure all verticies distances were
+    
+	int *parent = new int[G.getTotalVertices()];
+	int *lambda = new int[G.getTotalVertices()];
+    
+    //set up the vector to visit all nodes, T, the parent to have no parents and the min index to be the max
+	for (int i = 0; i < G.getTotalVertices(); i++)
 	{
-		T[i] = true; // all the vertices are eligible to be visited;
-		father[i] = -1; // at the beginning every vertex's father is -1;
-		Lambda[i] = INT_MAX; // every vertex is assumed to be far away from s.
+        T.insert(i);
+		parent[i] = -1; // at the beginning every vertex's parent is -1;
+		lambda[i] = INT_MAX; // every vertex is assumed to be far away from s.
 	}
-	Lambda[s] = 0; // s is at distance 0 of itself.
+    
+	lambda[source] = 0; // s is at distance 0 of itself.
 
-	//To do: Change loop structure
-	while (1)
-	{
-		/* set u to the vertex with the smallest Lambda. */
-		for (int i = 0; i < totalVertices; i++)
-		{
-			if (!uIsSet && T[i])
-			{
-				u = i;	//to set u to the first available vertex.
-				uIsSet = true;
-			}
-			else if (uIsSet && T[i] && Lambda[i] < Lambda[u])
-				u = i;	//to set u to the smallest Lambda (aka distance from source).
-		}
+    
+    int min_index, min_value; //adjNode varibles to find the smallest λ
+    node * adjNode;
+    
+    //continue until T is empty (meanging all distances between the source and each node is visited)
+    while (!T.empty()){
+        
+        min_index = *(T.begin()), min_value = lambda[min_index];
+        
+        
+        //gets the smallest λ
+        for (set<int>::iterator i = T.begin(); i != T.end(); ++i)
+        {
+            if (lambda[*i] < min_value)
+            {
+                min_value = lambda[*i];
+                min_index = *i;
+            }
+        }
+        
+        
+        //gets the address of the lowest lambda
+        adjNode = &G.headnodes[min_index];
+        
+        //itterate over all adjacent vertecies to the min index
+        for (adjNode = adjNode->next; adjNode; adjNode = adjNode->next)
+        {
+            
+            if (abs(G.edge[adjNode->edgeID].determined) == 1 &&
+                lambda[min_index] != INT_MAX && T.count(adjNode->vertex) > 0 &&
+                (lambda[adjNode->vertex] > lambda[min_index] + adjNode->edgeWeight))
+                
+            {
+                lambda[adjNode->vertex] = lambda[min_index] + adjNode->edgeWeight;
+                parent[adjNode->vertex] = min_index;
+            }
+            
+        }
+        
+        T.erase(min_index); //no longer consider this node for the adjacent list
+        
+    }
 
-		node* adjnode = G.headnodes[u].next;
-		while (adjnode != NULL)
-		{
-			if (abs(G.edge[adjnode->edgeID].determined) == 1 &&
-				Lambda[u] != INT_MAX && T[adjnode->vertex] &&
-				(Lambda[adjnode->vertex] > Lambda[u] + adjnode->edgeWeight))
-			{
-				Lambda[adjnode->vertex] = Lambda[u] + adjnode->edgeWeight;
-				father[adjnode->vertex] = u;
-			}
-			adjnode = adjnode->next;
-		}
-		uIsSet = false; // to indicate u is not set.
-		T[u] = false; //u is not available to be visited (aka. to delete u from T).
-		numOfVerticesToVisit--;
-		if (numOfVerticesToVisit == 0)
-			break;
-	}
-
+    
 	/* Dijkstra Results: */
-	int next = father[destination];
-	if (next != -1 && Lambda[destination] <= diameterConstraint)
-	{
-		/* delete dynamically allocated variables. */
-		delete[] T;
-		delete[] father;
-		delete[] Lambda;
-		return true;
-	}
-	else
-	{
-		/* delete dynamically allocated variables. */
-		delete[] T;
-		delete[] father;
-		delete[] Lambda;
-		return false;
-	}
+    //if the graph does connect and the distance between the between the source and destination is in the
+    bool works = (parent[destination] != -1 && lambda[destination] <= diameterConstraint);
+    
+    delete[] parent;
+    delete[] lambda;
+    return works;
+    
+
+
 
 }
