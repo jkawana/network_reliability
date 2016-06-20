@@ -7,49 +7,43 @@
 #include <set>
 #include "graph.cpp"
 
-bool Dijkstra(int source, int destination, Graph G, int diameterConstraint);
-
-const double totalTrials = 10000000  ;
+bool Dijkstra(int source, int destination, Graph G, int diameter);
 
 int main(int argc, char *argv[])
 {
 
-        clock_t startTime = clock(); //do we use this?
+        double expectedR = .997224, //0.339515,
+	       calcR;
 
-	MPI_Init(&argc, &argv);
-	int my_rank;
-	MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-	int num_procs;
-	MPI_Comm_size(MPI_COMM_WORLD, &num_procs);
+	int    diameter = 8,
+	       numVertices = 25,
+	       source = 0,
+	       destination = 12,
+	       totalHits = 0,     
+	       myRank,
+	       numProcs;
+
+        MPI_Init(&argc, &argv);
+	MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+	MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+
+	double randomNum, start, end, totaltime, outputtime;
+
+	const int localTrials = 1000000,
+	          totalTrials = localTrials * numProcs;
+
+	int hits = 0;
 	
-	//to test monte carlo w. dijkstra
-
-	//	double expectedR = .234521; //change accordingly. 
-	double expectedR = .997224; //change accordingly. 
-
-	double diameterConstraint = 8; // change accordingly
-	double totalNumOfVertices = 25; //change accordingly. 
-	int source = 0; 
-
-	//	double destination = 18; //change accordingly
-	double destination = 12; //change accordingly
-
-	//To do: read expectedR, diameter, |V|, destination in from file
-       
-	double reliability;
-	double totalSuccess = 0;
-	srand(time(NULL)*my_rank);
-	double randomNum;
-	double sum = 0;
-	double start, end, totaltime, outputtime;
-	Graph G(totalNumOfVertices);
+	Graph G(numVertices);
 	G.create();
 	
 	MPI_Barrier(MPI_COMM_WORLD);
 	start = MPI_Wtime();
 	
-	//looping n number of times
-	for ( int i = 0 ; i < totalTrials; i++)
+	srand(time(NULL)*myRank);
+	
+	//looping over number of times
+	for ( int i = 0 ; i < localTrials; i++)
 	{
 		for ( int j = 0; j < G.getTotalEdges(); j++ )
 		{
@@ -59,55 +53,56 @@ int main(int argc, char *argv[])
 			else
 				G.edge[j].determined = 1;
 		}
-		if ( Dijkstra(source, destination, G, diameterConstraint) ) 
-		{	totalSuccess++;  
+		if ( Dijkstra(source, destination, G, diameter) ) 
+		{	hits++;  
 }
 	}
 	
-       	printf("Processor: %d     totalSuccess: %f\n",my_rank,totalSuccess); 
+       	printf("Processor: %d     hits: %d\n",myRank,hits); 
 
 	end = MPI_Wtime();
 	totaltime = end - start;
 	
 	MPI_Reduce(&totaltime, &outputtime, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-	MPI_Reduce(&totalSuccess, &sum, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	MPI_Reduce(&hits, &totalHits, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 
-	if (my_rank == 0)
+	if (myRank == 0)
 	{
-		cout << "Total number of proccessors = " << num_procs << endl;
-		cout << "Total number of hits = " << sum << endl;
-		cout << "Each Proccessor performs " << totalTrials << "  Trials" << endl;
-		cout << "Total number of trials = " << (totalTrials * num_procs) << endl;
-		
-		reliability = sum / (totalTrials * num_procs);
-		
-		cout << "Monte Carlo Result: " << endl;
-		cout << "5x5grid" << endl; //change
-		cout << "Diameter Constraint: " << diameterConstraint << endl;
-		cout << "Source Node: " << source << endl;
-		cout << "Destination Node: " << destination << endl;
-		cout << "Reliability: " << reliability << endl;
-		cout << "Expected Reliability: " << expectedR << endl;
-		cout << "Difference: " << (reliability - expectedR) << endl;
-		cout << "Time: " << outputtime << endl;
+	       
+	  calcR = (double) totalHits / totalTrials;
+
+	       cout << "Total number of proccessors = " << numProcs << endl;
+	       cout << "Total number of hits = " << totalHits << endl;
+	       cout << "Each Proccessor performs " << localTrials << "  Trials" << endl;
+	       cout << "Total number of trials = " << totalTrials << endl;
+	       
+	       cout << "Monte Carlo Result " << endl;
+	       cout << "5x5grid" << endl; //change
+	       cout << "Diameter Constraint = " << diameter << endl;
+	       cout << "Source Node = " << source << endl;
+	       cout << "Destination Node = " << destination << endl;
+	       cout << "Calculated Reliability = " << calcR << endl;
+	       cout << "Expected Reliability = " << expectedR << endl;
+	       cout << "Difference = " << (calcR - expectedR) << endl;
+	       cout << "Time = " << outputtime << endl;
 	}
 
-	MPI_Barrier(MPI_COMM_WORLD); //what does this do?
 	MPI_Finalize();
 
 	return 0;
 }
 
-bool Dijkstra(int source, int destination, Graph G, int diameterConstraint)
+bool Dijkstra(int source, int destination, Graph G, int diameter)
 {
   	
-    set<int> T; //the set of verticies used to make sure all verticies distances were
+    set<int> T; //the set of vertices used to make sure all verticies distances were
     
-	int *parent = new int[G.getTotalVertices()];
-	int *lambda = new int[G.getTotalVertices()];
+    int totalVertices = G.getTotalVertices();
+	int *parent = new int[totalVertices];
+	int *lambda = new int[totalVertices];
     
     //set up the vector to visit all nodes, T, the parent to have no parents and the min index to be the max
-	for (int i = 0; i < G.getTotalVertices(); i++)
+	for (int i = 0; i < totalVertices; i++)
 	{
         T.insert(i);
 		parent[i] = -1; // at the beginning every vertex's parent is -1;
@@ -162,7 +157,7 @@ bool Dijkstra(int source, int destination, Graph G, int diameterConstraint)
     
 	/* Dijkstra Results: */
     //if the graph does connect and the distance between the between the source and destination is in the
-    bool works = (parent[destination] != -1 && lambda[destination] <= diameterConstraint);
+    bool works = (parent[destination] != -1 && lambda[destination] <= diameter);
     
     delete[] parent;
     delete[] lambda;
