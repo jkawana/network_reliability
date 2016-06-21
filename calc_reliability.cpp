@@ -54,8 +54,9 @@ int main(int argc, char *argv[])
 				G.edge[j].determined = 1;
 		}
 		if ( Dijkstra(source, destination, G, diameter) ) 
-		{	hits++;  
-}
+		{	
+			hits++;  
+		}
 	}
 	
        	printf("Processor: %d     hits: %d\n",myRank,hits); 
@@ -162,8 +163,4 @@ bool Dijkstra(int source, int destination, Graph G, int diameter)
     delete[] parent;
     delete[] lambda;
     return works;
-    
-
-
-
 }

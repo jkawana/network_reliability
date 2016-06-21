@@ -84,17 +84,15 @@ void Graph::create(const char *fileName)
 	ifstream fin;	//to read from a file.
 	fin.open(fileName);
 
-	fin >> miscString >> miscString >> miscString;
 	fin >> totalEdges;
 
 	edge = new Edge[totalEdges];	//to setup the edge array.
-	fin >> miscString;
 
 	if (totalEdges > 0)
 	{
 		for (int i = 0; i < totalEdges; i++)
 		{
-			fin >> edgeV1 >> comma >> edgeV2 >> comma >> successRate;
+			fin >> edgeV1 >> edgeV2 >> successRate;
 
 			edge[i].determined = -1;	//-1 means this edge is not determined yet.
 			edge[i].successRate = successRate;
