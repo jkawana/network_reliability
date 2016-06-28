@@ -1,38 +1,39 @@
 #include <mpi.h>
-#include <climits>
-#include <algorithm>
 #include "graph.h"
+#include "graph.cpp"
 #include <stdlib.h>
 #include <time.h>
-#include <set>
-#include "graph.cpp"
 
 bool Dijkstra(int source, int destination, Graph G, int diameter);
 
 int main(int argc, char *argv[])
 {
     
-    double expectedR = .997224, //0.339515,
-           calcR;
-    
-    int    diameter = 8,
-           numVertices = 25,
-           source = 0,
-           destination = 12,
-           totalHits = 0,
-           myRank,
-           numProcs;
+    double      expectedR = 0.234521,
+                calcR;
+        
+    int         diameter = 8,
+                numVertices = 25,
+                source = 0,
+                destination = 18,
+                totalHits = 0,
+                myRank,
+                numProcs;
     
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
     MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
     
-    double randomNum, start, end, totaltime, outputtime;
+    double      randomNum,
+                start,
+                end,
+                totaltime,
+                outputtime;
     
-    const int localTrials = 1000000,
-    totalTrials = localTrials * numProcs;
+    const int   localTrials = 1000000,
+                totalTrials = localTrials * numProcs;
     
-    int hits = 0;
+    int         hits = 0;
     
     Graph G(numVertices);
     G.create();
@@ -47,11 +48,18 @@ int main(int argc, char *argv[])
     {
         for ( int j = 0; j < G.getTotalEdges(); j++ )
         {
+            
             randomNum = rand() % 100 + 1;
-            if ( randomNum > G.edge[j].successRate * 100)
+            
+            
+            //maybe just make this a function to determine it and send it the randnumber, so it can account for the number of edges currently in the graph which would help with finding the ri and ru stuff in
+            if ( randomNum > G.edge[j].successRate * 100 )
                 G.edge[j].determined = 0;
             else
                 G.edge[j].determined = 1;
+            
+            
+            
         }
         if ( Dijkstra(source, destination, G, diameter) )
         {
@@ -59,7 +67,7 @@ int main(int argc, char *argv[])
         }
     }
     
-    printf("Processor: %d     hits: %d\n",myRank,hits);
+    printf("\nProcessor: %d     hits: %d\n\n", myRank, hits);
     
     end = MPI_Wtime();
     totaltime = end - start;
@@ -76,7 +84,7 @@ int main(int argc, char *argv[])
         cout << "Each Proccessor performs " << localTrials << "  Trials" << endl;
         cout << "Total number of trials = " << totalTrials << endl;
         
-        cout << "Monte Carlo Result " << endl;
+        cout << "\nMonte Carlo Result " << endl;
         cout << "5x5grid" << endl; //change
         cout << "Diameter Constraint = " << diameter << endl;
         cout << "Source Node = " << source << endl;
@@ -94,71 +102,61 @@ int main(int argc, char *argv[])
 
 bool Dijkstra(int source, int destination, Graph G, int diameter)
 {
-    
-    set<int> T; //the set of vertices used to make sure all verticies distances were
-    
     int totalVertices = G.getTotalVertices();
-    int *parent = new int[totalVertices];
-    int *lambda = new int[totalVertices];
+    bool *T = new bool[totalVertices];
+    int *father = new int[totalVertices];
+    int *Lambda = new int[totalVertices];
     
-    //set up the vector to visit all nodes, T, the parent to have no parents and the min index to be the max
+    int minIndex= source; // u is the vertex with smallest Lambda, which at beginning is s.
+    bool minIndexIsSet = true; //used to make sure that the minIndex is set to the first avail value each time
+    
     for (int i = 0; i < totalVertices; i++)
     {
-        T.insert(i);
-        parent[i] = -1; // at the beginning every vertex's parent is -1;
-        lambda[i] = INT_MAX; // every vertex is assumed to be far away from s.
+        T[i] = true; // all the vertices are eligible to be visited;
+        father[i] = -1; // at the beginning every vertex's father is -1;
+        Lambda[i] = INT_MAX; // every vertex is assumed to be far away from s.
     }
+    Lambda[source] = 0; // s is at distance 0 of itself.
     
-    lambda[source] = 0; // s is at distance 0 of itself.
-    
-    
-    int min_index, min_value; //adjNode varibles to find the smallest λ
-    node * adjNode;
-    
-    //continue until T is empty (meanging all distances between the source and each node is visited)
-    while (!T.empty()){
-        
-        min_index = *(T.begin()), min_value = lambda[min_index];
-        
-        
-        //gets the smallest λ
-        for (set<int>::iterator i = T.begin(); i != T.end(); ++i)
+    //can this loop be while numOfVerticesToVisit !=0 or > 0!?
+
+    for (int numVerticesToVisit = totalVertices; numVerticesToVisit>0; numVerticesToVisit--)
+    {
+        /* set u to the vertex with the smallest Lambda. */
+        for (int i = 0; i < totalVertices; i++)
         {
-            if (lambda[*i] < min_value)
+            //cant this be done with something else?
+            if (!minIndexIsSet && T[i])
             {
-                min_value = lambda[*i];
-                min_index = *i;
+                minIndex= i;	//to set minIndexto the first available vertex.
+                minIndexIsSet = true;
             }
+            else if (minIndexIsSet && T[i] && Lambda[i] < Lambda[minIndex])
+                minIndex= i;	//to set minIndexto the smallest Lambda (aka distance from source).
         }
         
-        
-        //gets the address of the lowest lambda
-        adjNode = &G.headnodes[min_index];
-        
-        //itterate over all adjacent vertecies to the min index
-        for (adjNode = adjNode->next; adjNode; adjNode = adjNode->next)
+        //itterate over all adjacent nodes
+        for( node* adjnode = G.headnodes[minIndex].next; adjnode; adjnode = adjnode->next)
         {
-            
-            if (abs(G.edge[adjNode->edgeID].determined) == 1 &&
-                lambda[min_index] != INT_MAX && T.count(adjNode->vertex) > 0 &&
-                (lambda[adjNode->vertex] > lambda[min_index] + adjNode->edgeWeight))
+            if (abs(G.edge[adjnode->edgeID].determined) == 1 &&
+                Lambda[minIndex] != INT_MAX && T[adjnode->vertex] &&
+                (Lambda[adjnode->vertex] > Lambda[minIndex] + adjnode->edgeWeight))
             {
-                lambda[adjNode->vertex] = lambda[min_index] + adjNode->edgeWeight;
-                parent[adjNode->vertex] = min_index;
+                Lambda[adjnode->vertex] = Lambda[minIndex] + adjnode->edgeWeight;
+                father[adjnode->vertex] = minIndex;
             }
-            
         }
-        
-        T.erase(min_index); //no longer consider this node for the adjacent list
-        
+        minIndexIsSet = false; // to indicate minIndexis not set, I.E TAKE VIRST AVAIL INDEX IN FOR LOOP ABOVE
+        T[minIndex] = false; //minIndexis not available to be visited (aka. to delete minIndex from T).
     }
-    
     
     /* Dijkstra Results: */
-    //if the graph does connect and the distance between the between the source and destination is in the
-    bool works = (parent[destination] != -1 && lambda[destination] <= diameter);
     
-    delete[] parent;
-    delete[] lambda;
-    return works;
+    bool results = (father[destination] != -1 && Lambda[destination] <= diameter);
+    /* delete dynamically allocated variables. */
+    delete[] T;
+    delete[] father;
+    delete[] Lambda;
+    return results;
+
 }
