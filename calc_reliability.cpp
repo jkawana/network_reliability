@@ -3,35 +3,40 @@
 #include "graph.cpp"
 #include <stdlib.h>
 #include <time.h>
+#include <math.h>
+bool    Dijkstra(int source, int destination, Graph G, int diameter);
 
-bool Dijkstra(int source, int destination, Graph G, int diameter);
+double F(int i, int m, double p);
+long long factorial(int x);
+long long combination(int x, int y);
 
 int main(int argc, char *argv[])
 {
     
-    double      expectedR = 0.234521,
-                calcR;
-        
+    double      expectedR = 0.234,
+    calcR;
+    
     int         diameter = 8,
-                numVertices = 25,
-                source = 0,
-                destination = 18,
-                totalHits = 0,
-                myRank,
-                numProcs;
+    numVertices = 25,
+    source = 0,
+    destination = 18,
+    totalHits = 0,
+    myRank,
+    numProcs;
     
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
     MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
     
     double      randomNum,
-                start,
-                end,
-                totaltime,
-                outputtime;
+    otherRandom,
+    start,
+    end,
+    totaltime,
+    outputtime;
     
     const int   localTrials = 1000000,
-                totalTrials = localTrials * numProcs;
+    totalTrials = localTrials * numProcs;
     
     int         hits = 0;
     
@@ -46,21 +51,51 @@ int main(int argc, char *argv[])
     //looping over number of times
     for ( int i = 0 ; i < localTrials; i++)
     {
+        G.resetAliveEdges();
         for ( int j = 0; j < G.getTotalEdges(); j++ )
         {
-            
-            randomNum = rand() % 100 + 1;
-            
-            
-            //maybe just make this a function to determine it and send it the randnumber, so it can account for the number of edges currently in the graph which would help with finding the ri and ru stuff in
-            if ( randomNum > G.edge[j].successRate * 100 )
-                G.edge[j].determined = 0;
-            else
-                G.edge[j].determined = 1;
-            
-            
-            
+            randomNum = rand() % 100 + 1; //maybe put right into the function
+            G.setSuccRate(randomNum, j);
         }
+        
+        /*
+         
+         |          |           |           |
+         a          m           c           b
+         
+         */
+        //printf("before fixing: %lu",G.edgesAlive.size());
+        //need to add more edges from the dead (MAKE ALIVE)
+        
+        
+        
+        //does this need to be <= or just <
+        if (G.edgesAlive.size() < G.minCut)
+        {
+            randomNum = rand() % (G.maxAlive-G.edgesAlive.size()) + (G.minCut-G.edgesAlive.size());
+            //printf(" number to add: %f",randomNum);
+            for (int i = 0 ; i < randomNum; i++){
+                otherRandom = rand() % (G.edgesDead.size()-1);
+                G.edge[ G.edgesDead[otherRandom] ].determined = 1;
+                //G.edgesAlive.push_back(G.edgesDead[otherRandom]); not really important but i figured incase of anything its here
+                G.edgesDead.erase(G.edgesDead.begin() + otherRandom);
+            }
+        }
+        
+        //need to remove edges from the alive (KILL)
+        else if (G.edgesAlive.size() > G.maxAlive)
+        {
+            randomNum = rand() % (G.edgesAlive.size()-G.minCut) + (G.edgesAlive.size()-G.maxAlive);
+            //printf(" number to delete: %f",randomNum);
+            for (int i = 0 ; i < randomNum; i++){
+                otherRandom = rand() % (G.edgesAlive.size()-1);
+                G.edge[ G.edgesAlive[otherRandom] ].determined = 0;
+                //G.edgesDead.push_back(G.edgesAlive[otherRandom]); not really important but i figured incase of anything its here
+                G.edgesAlive.erase(G.edgesAlive.begin() + otherRandom);
+            }
+        }
+        //printf(" after fixing: %lu\n",G.edgesAlive.size());
+        
         if ( Dijkstra(source, destination, G, diameter) )
         {
             hits++;
@@ -77,8 +112,12 @@ int main(int argc, char *argv[])
     
     if (myRank == 0)
     {
-        calcR = (double) totalHits / totalTrials;
+        //plug in Values stored in G
+        long long Ru = 1 - F(40-6, 25, 0.95);
+        long long Ri = F(2-1, 25, 0.95);
         
+        calcR = (double) totalHits / totalTrials;
+        long long finalResult = Ri + (Ru-Ri)*calcR;
         cout << "Total number of proccessors = " << numProcs << endl;
         cout << "Total number of hits = " << totalHits << endl;
         cout << "Each Proccessor performs " << localTrials << "  Trials" << endl;
@@ -89,9 +128,9 @@ int main(int argc, char *argv[])
         cout << "Diameter Constraint = " << diameter << endl;
         cout << "Source Node = " << source << endl;
         cout << "Destination Node = " << destination << endl;
-        cout << "Calculated Reliability = " << calcR << endl;
+        cout << "Calculated Reliability = " << finalResult << endl;
         cout << "Expected Reliability = " << expectedR << endl;
-        cout << "Difference = " << (calcR - expectedR) << endl;
+        cout << "Difference = " << (finalResult - expectedR) << endl;
         cout << "Time = " << outputtime << endl;
     }
     
@@ -103,9 +142,10 @@ int main(int argc, char *argv[])
 bool Dijkstra(int source, int destination, Graph G, int diameter)
 {
     int totalVertices = G.getTotalVertices();
+    
     bool *T = new bool[totalVertices];
-    int *father = new int[totalVertices];
-    int *Lambda = new int[totalVertices];
+    int  *father = new int[totalVertices];
+    int  *Lambda = new int[totalVertices];
     
     int minIndex= source; // u is the vertex with smallest Lambda, which at beginning is s.
     bool minIndexIsSet = true; //used to make sure that the minIndex is set to the first avail value each time
@@ -118,9 +158,7 @@ bool Dijkstra(int source, int destination, Graph G, int diameter)
     }
     Lambda[source] = 0; // s is at distance 0 of itself.
     
-    //can this loop be while numOfVerticesToVisit !=0 or > 0!?
-
-    for (int numVerticesToVisit = totalVertices; numVerticesToVisit>0; numVerticesToVisit--)
+    for (int numVerticesToVisit = totalVertices; numVerticesToVisit > 0; numVerticesToVisit--)
     {
         /* set u to the vertex with the smallest Lambda. */
         for (int i = 0; i < totalVertices; i++)
@@ -158,5 +196,30 @@ bool Dijkstra(int source, int destination, Graph G, int diameter)
     delete[] father;
     delete[] Lambda;
     return results;
-
+    
 }
+
+
+double F(int i, int m, double p)
+{
+    double sum = 0;
+    for ( int j = 0; j <= i; j++ )
+    {
+        sum+= combination(m,j) * pow(p,j) * pow((1-p),(m-j));
+    }
+    return sum;
+}
+
+long long factorial(int x)
+{
+    long long sum=1;
+    for (int i = x; i>1; i--) sum*=x;
+    return sum;
+}
+
+long long combination(int x, int y){
+    return factorial(x) / (factorial(y)*factorial(x-y));
+}
+
+
+
