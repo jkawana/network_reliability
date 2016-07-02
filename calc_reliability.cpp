@@ -4,39 +4,43 @@
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
+
 bool    Dijkstra(int source, int destination, Graph G, int diameter);
 
-double F(int i, int m, double p);
 long long factorial(int x);
+
 long long combination(int x, int y);
+
+double F(int i, int m, double p);
+
 
 int main(int argc, char *argv[])
 {
     
     double      expectedR = 0.234,
-    calcR;
+                calcR;
     
     int         diameter = 8,
-    numVertices = 25,
-    source = 0,
-    destination = 18,
-    totalHits = 0,
-    myRank,
-    numProcs;
+                numVertices = 25,
+                source = 0,
+                destination = 18,
+                totalHits = 0,
+                myRank,
+                numProcs;
     
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
     MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
     
     double      randomNum,
-    otherRandom,
-    start,
-    end,
-    totaltime,
-    outputtime;
+                otherRandom,
+                start,
+                end,
+                totaltime,
+                outputtime;
     
     const int   localTrials = 1000000,
-    totalTrials = localTrials * numProcs;
+                totalTrials = localTrials * numProcs;
     
     int         hits = 0;
     
@@ -68,8 +72,6 @@ int main(int argc, char *argv[])
         //need to add more edges from the dead (MAKE ALIVE)
         
         
-        
-        //does this need to be <= or just <
         if (G.edgesAlive.size() < G.minCut)
         {
             randomNum = rand() % (G.maxAlive-G.edgesAlive.size()) + (G.minCut-G.edgesAlive.size());
@@ -114,7 +116,7 @@ int main(int argc, char *argv[])
     {
         //plug in Values stored in G
         long long Ru = 1 - F(40-6, 25, 0.95);
-        long long Ri = F(2-1, 25, 0.95);
+        long long Ri = F(6-1, 25, 0.95);
         
         calcR = (double) totalHits / totalTrials;
         long long finalResult = Ri + (Ru-Ri)*calcR;
@@ -199,17 +201,6 @@ bool Dijkstra(int source, int destination, Graph G, int diameter)
     
 }
 
-
-double F(int i, int m, double p)
-{
-    double sum = 0;
-    for ( int j = 0; j <= i; j++ )
-    {
-        sum+= combination(m,j) * pow(p,j) * pow((1-p),(m-j));
-    }
-    return sum;
-}
-
 long long factorial(int x)
 {
     long long sum=1;
@@ -220,6 +211,18 @@ long long factorial(int x)
 long long combination(int x, int y){
     return factorial(x) / (factorial(y)*factorial(x-y));
 }
+
+
+double F(int i, int m, double p)
+{
+    double sum = 0;
+    for ( int j = 0; j <= i; j++ )
+    {
+        sum += combination(m,j) * pow(p,j) * pow((1-p),(m-j));
+    }
+    return sum;
+}
+
 
 
 
