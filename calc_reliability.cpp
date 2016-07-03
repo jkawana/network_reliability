@@ -104,6 +104,8 @@ int main(int argc, char *argv[])
         }
     }
     
+    
+    //able to make it to here. so something wrong with one of my functions?
     printf("\nProcessor: %d     hits: %d\n\n", myRank, hits);
     
     end = MPI_Wtime();
@@ -116,10 +118,16 @@ int main(int argc, char *argv[])
     {
         //plug in Values stored in G
         long long Ru = 1 - F(40-6, 25, 0.95);
-        long long Ri = F(6-1, 25, 0.95);
+        long long Ri = F(2-1, 25, 0.95);
         
         calcR = (double) totalHits / totalTrials;
+        
+        
         long long finalResult = Ri + (Ru-Ri)*calcR;
+        
+        
+        cout<< Ru << ' ' << Ri << ' ' << calcR << ' ' << finalResult << endl;
+        
         cout << "Total number of proccessors = " << numProcs << endl;
         cout << "Total number of hits = " << totalHits << endl;
         cout << "Each Proccessor performs " << localTrials << "  Trials" << endl;
@@ -202,14 +210,21 @@ bool Dijkstra(int source, int destination, Graph G, int diameter)
 }
 
 long long factorial(int x)
+//this or the factorial choose was causing the problem before. 
 {
     long long sum=1;
     for (int i = x; i>1; i--) sum*=x;
     return sum;
 }
 
+//https://en.wikipedia.org/wiki/Binomial_coefficient#Multiplicative_formula this will be nuch faster, no?
 long long combination(int x, int y){
-    return factorial(x) / (factorial(y)*factorial(x-y));
+    //return factorial(x) / (factorial(y)*factorial(x-y)); this was causing the problem
+    long long result = 1;
+    for ( int i = 1; i <= y ; i++){
+        result = result * ( (x + 1 - i) / i);
+    }
+    return result;
 }
 
 
@@ -218,7 +233,7 @@ double F(int i, int m, double p)
     double sum = 0;
     for ( int j = 0; j <= i; j++ )
     {
-        sum += combination(m,j) * pow(p,j) * pow((1-p),(m-j));
+        sum += (combination(m,j) * pow(p,j) * pow((1-p),(m-j)));
     }
     return sum;
 }

@@ -70,7 +70,7 @@ void Graph::create()
         }
     }
     minCut = 2;
-    maxAlive = totalEdges - 6;
+    maxAlive = totalEdges - minCut;
     fin.close();	//close the file.
 }
 void Graph::create(const char *fileName)
@@ -115,7 +115,7 @@ void Graph::create(const char *fileName)
         }
     }
     minCut = 2;
-    maxAlive = totalEdges - 6;
+    maxAlive = totalEdges - minCut;
     fin.close();	//close the file.
 }
 int Graph::getTotalVertices()
