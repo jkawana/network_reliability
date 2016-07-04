@@ -9,7 +9,7 @@ bool    Dijkstra(int source, int destination, Graph G, int diameter);
 
 long long factorial(int x);
 
-long long combination(int x, int y);
+double combination(int x, int y);
 
 double F(int i, int m, double p);
 
@@ -117,13 +117,13 @@ int main(int argc, char *argv[])
     if (myRank == 0)
     {
         //plug in Values stored in G
-        long long Ru = 1 - F(40-6, 25, 0.95);
-        long long Ri = F(2-1, 25, 0.95);
+        double Ru = 1 - F(40-6, 25, 0.95);
+        double Ri = F(2-1, 25, 0.95);
         
         calcR = (double) totalHits / totalTrials;
         
         
-        long long finalResult = Ri + (Ru-Ri)*calcR;
+        double finalResult = Ri + (Ru-Ri)*calcR;
         
         
         cout<< Ru << ' ' << Ri << ' ' << calcR << ' ' << finalResult << endl;
@@ -210,7 +210,7 @@ bool Dijkstra(int source, int destination, Graph G, int diameter)
 }
 
 long long factorial(int x)
-//this or the factorial choose was causing the problem before. 
+//this or the factorial choose was causing the problem before.
 {
     long long sum=1;
     for (int i = x; i>1; i--) sum*=x;
@@ -218,9 +218,9 @@ long long factorial(int x)
 }
 
 //https://en.wikipedia.org/wiki/Binomial_coefficient#Multiplicative_formula this will be nuch faster, no?
-long long combination(int x, int y){
+double combination(int x, int y){
     //return factorial(x) / (factorial(y)*factorial(x-y)); this was causing the problem
-    long long result = 1;
+    double result = 1;
     for ( int i = 1; i <= y ; i++){
         result = result * ( (x + 1 - i) / i);
     }
@@ -235,6 +235,7 @@ double F(int i, int m, double p)
     {
         sum += (combination(m,j) * pow(p,j) * pow((1-p),(m-j)));
     }
+    cout<< sum <<endl;
     return sum;
 }
 
