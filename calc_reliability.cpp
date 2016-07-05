@@ -9,7 +9,7 @@ bool    Dijkstra(int source, int destination, Graph G, int diameter);
 
 long long factorial(int x);
 
-double combination(int x, int y);
+long long  combination(int x, int y);
 
 double F(int i, int m, double p);
 
@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
         double finalResult = Ri + (Ru-Ri)*calcR;
         
         
-        cout<< Ru << ' ' << Ri << ' ' << calcR << ' ' << finalResult << endl;
+        cout<< Ru << ' ' << Ri << ' ' << calcR << endl;
         
         cout << "Total number of proccessors = " << numProcs << endl;
         cout << "Total number of hits = " << totalHits << endl;
@@ -213,18 +213,21 @@ long long factorial(int x)
 //this or the factorial choose was causing the problem before.
 {
     long long sum=1;
-    for (int i = x; i>1; i--) sum*=x;
+    for (int i = 1; i<=x; i++) sum*=i;
+    
     return sum;
 }
 
 //https://en.wikipedia.org/wiki/Binomial_coefficient#Multiplicative_formula this will be nuch faster, no?
-double combination(int x, int y){
-    //return factorial(x) / (factorial(y)*factorial(x-y)); this was causing the problem
-    double result = 1;
+long long combination(int x, int y){
+    return factorial(x) / (factorial(y)*factorial(x-y)); //this was causing the problem
+    
+    /*double result = 1;
     for ( int i = 1; i <= y ; i++){
-        result = result * ( (x + 1 - i) / i);
+        result *= ( (x + 1 - i) / i);
     }
-    return result;
+    cout <<x<< " choose "<<y<<' ' << result << endl;
+    return result;*/
 }
 
 
@@ -234,8 +237,9 @@ double F(int i, int m, double p)
     for ( int j = 0; j <= i; j++ )
     {
         sum += (combination(m,j) * pow(p,j) * pow((1-p),(m-j)));
+    //cout << sum << endl;
     }
-    cout<< sum <<endl;
+    //cout << sum << endl;
     return sum;
 }
 
