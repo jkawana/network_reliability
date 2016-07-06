@@ -4,20 +4,21 @@
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
+#include <climits>
 
 bool    Dijkstra(int source, int destination, Graph G, int diameter);
 
-double factorial(int x);
+double  factorial(int x);
 
 double  combination(int x, int y);
 
-double F(int i, int m, double p);
+double  F(int lo, int hi, int m, double p);
 
 
 int main(int argc, char *argv[])
 {
     
-    double      expectedR = 0.234588,
+    double      expectedR = 0.997224,
                 calcR;
     
     int         diameter = 8,
@@ -126,19 +127,20 @@ int main(int argc, char *argv[])
         
         //plug in Values stored in G
         
-        
-        double Ri = F(6-1, 40, 0.95);
-        double Ru = 1 - F(40-2, 40, 0.95);
-        
+               
+        double Rl = F(G.totalEdges-G.minCut+1,G.totalEdges, G.totalEdges, 0.95);
+        double Ru = 1 - F(0, G.minPath-1, G.totalEdges, 0.95);
+	 
         calcR = (double) totalHits / totalTrials;
         
         
-        double finalResult = Ri + (Ru-Ri)*calcR ;
+        double finalResult = Rl + (Ru-Rl)*calcR ;
         
         
-        cout<< Ru << ' ' << Ri << ' ' << calcR << endl;
-        
-        cout << "Total number of proccessors = " << numProcs << endl;
+	cout << "Rl, Ru = " << Rl << ' ' << Ru << endl;
+	cout << "MC calculated reliability = " << calcR << endl;
+
+        cout << "\nTotal number of proccessors = " << numProcs << endl;
         cout << "Total number of hits = " << totalHits << endl;
         cout << "Each Proccessor performs " << localTrials << "  Trials" << endl;
         cout << "Total number of trials = " << totalTrials << endl;
@@ -204,7 +206,7 @@ bool Dijkstra(int source, int destination, Graph G, int diameter)
                 father[adjnode->vertex] = minIndex;
             }
         }
-        minIndexIsSet = false; // to indicate minIndexis not set, I.E TAKE VIRST AVAIL INDEX IN FOR LOOP ABOVE
+        minIndexIsSet = false; // to indicate minIndexis not set, I.E TAKE FIRST AVAIL INDEX IN FOR LOOP ABOVE
         T[minIndex] = false; //minIndexis not available to be visited (aka. to delete minIndex from T).
     }
     
@@ -235,10 +237,10 @@ double combination(int x, int y){
 }
 
 
-double F(int i, int m, double p)
+double F(int lo, int hi, int m, double p)
 {
     double sum = 0;
-    for ( int j = 0; j <= i; j++ )
+    for ( int j = lo; j <= hi; j++ )
     {
         sum += (combination(m,j) * pow(p,j) * pow((1-p),(m-j)));
     }

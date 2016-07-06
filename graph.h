@@ -24,10 +24,10 @@ struct node
 class Graph
 {
 private:
-    int totalEdges;                     // total number of edges.
     int totalVertices;                  // total number of vertices.
     
 public:
+    int totalEdges;                     // total number of edges.
     int minCut;
     int maxAlive;
     int minPath;
