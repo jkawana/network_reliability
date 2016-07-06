@@ -69,8 +69,8 @@ void Graph::create()
             tempPtr->next->edgeID = i;
         }
     }
-    minCut = 2;
-    maxAlive = totalEdges - minCut;
+    minCut = 6;
+    maxAlive = totalEdges - 2;
     fin.close();	//close the file.
 }
 void Graph::create(const char *fileName)
@@ -114,8 +114,8 @@ void Graph::create(const char *fileName)
             tempPtr->next->edgeID = i;
         }
     }
-    minCut = 2;
-    maxAlive = totalEdges - minCut;
+    minCut = 6;
+    maxAlive = totalEdges - 2;
     fin.close();	//close the file.
 }
 int Graph::getTotalVertices()

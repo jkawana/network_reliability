@@ -7,9 +7,9 @@
 
 bool    Dijkstra(int source, int destination, Graph G, int diameter);
 
-long long factorial(int x);
+double factorial(int x);
 
-long long  combination(int x, int y);
+double  combination(int x, int y);
 
 double F(int i, int m, double p);
 
@@ -17,7 +17,7 @@ double F(int i, int m, double p);
 int main(int argc, char *argv[])
 {
     
-    double      expectedR = 0.234,
+    double      expectedR = 0.999975,
                 calcR;
     
     int         diameter = 8,
@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
                 totaltime,
                 outputtime;
     
-    const int   localTrials = 1000000,
+    const int   localTrials = 100,
                 totalTrials = localTrials * numProcs;
     
     int         hits = 0;
@@ -68,11 +68,11 @@ int main(int argc, char *argv[])
          a          m           c           b
          
          */
-        //printf("before fixing: %lu",G.edgesAlive.size());
+        printf("before fixing: %lu",G.edgesAlive.size());
         //need to add more edges from the dead (MAKE ALIVE)
         
         
-        if (G.edgesAlive.size() < G.minCut)
+        if (G.edgesAlive.size() < G.minCut)    //when t= 18, min cut is 6
         {
             randomNum = rand() % (G.maxAlive-G.edgesAlive.size()) + (G.minCut-G.edgesAlive.size());
             //printf(" number to add: %f",randomNum);
@@ -85,10 +85,10 @@ int main(int argc, char *argv[])
         }
         
         //need to remove edges from the alive (KILL)
-        else if (G.edgesAlive.size() > G.maxAlive)
+        else if (G.edgesAlive.size() > G.maxAlive) //max alive is 38
         {
             randomNum = rand() % (G.edgesAlive.size()-G.minCut) + (G.edgesAlive.size()-G.maxAlive);
-            //printf(" number to delete: %f",randomNum);
+            printf(" number to delete: %f",randomNum);
             for (int i = 0 ; i < randomNum; i++){
                 otherRandom = rand() % (G.edgesAlive.size()-1);
                 G.edge[ G.edgesAlive[otherRandom] ].determined = 0;
@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
                 G.edgesAlive.erase(G.edgesAlive.begin() + otherRandom);
             }
         }
-        //printf(" after fixing: %lu\n",G.edgesAlive.size());
+        printf(" after fixing: %lu\n",G.edgesAlive.size());
         
         if ( Dijkstra(source, destination, G, diameter) )
         {
@@ -116,14 +116,22 @@ int main(int argc, char *argv[])
     
     if (myRank == 0)
     {
+        
+        //the one that we went over last isnt wokrin giwth
+        
+        
         //plug in Values stored in G
-        double Ru = 1 - F(40-6, 25, 0.95);
-        double Ri = F(2-1, 25, 0.95);
+        
+        
+        double Ru = 1 - F(40-2, 40, 0.95);
+        double Ri = F(6-1, 40, 0.95);
+        
+        
         
         calcR = (double) totalHits / totalTrials;
         
         
-        double finalResult = Ri + (Ru-Ri)*calcR;
+        double finalResult = Ri + (Ru-Ri)*calcR ;
         
         
         cout<< Ru << ' ' << Ri << ' ' << calcR << endl;
@@ -209,25 +217,19 @@ bool Dijkstra(int source, int destination, Graph G, int diameter)
     
 }
 
-long long factorial(int x)
+double factorial(int x)
 //this or the factorial choose was causing the problem before.
 {
-    long long sum=1;
+    double sum=1;
     for (int i = 1; i<=x; i++) sum*=i;
     
+    //cout<<x<<' ' <<sum<<endl;
     return sum;
 }
 
 //https://en.wikipedia.org/wiki/Binomial_coefficient#Multiplicative_formula this will be nuch faster, no?
-long long combination(int x, int y){
-    return factorial(x) / (factorial(y)*factorial(x-y)); //this was causing the problem
-    
-    /*double result = 1;
-    for ( int i = 1; i <= y ; i++){
-        result *= ( (x + 1 - i) / i);
-    }
-    cout <<x<< " choose "<<y<<' ' << result << endl;
-    return result;*/
+double combination(int x, int y){
+    return factorial(x) / (factorial(y)*factorial(x-y));
 }
 
 
@@ -237,9 +239,7 @@ double F(int i, int m, double p)
     for ( int j = 0; j <= i; j++ )
     {
         sum += (combination(m,j) * pow(p,j) * pow((1-p),(m-j)));
-    //cout << sum << endl;
     }
-    //cout << sum << endl;
     return sum;
 }
 
