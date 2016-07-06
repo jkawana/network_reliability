@@ -17,7 +17,7 @@ double F(int i, int m, double p);
 int main(int argc, char *argv[])
 {
     
-    double      expectedR = 0.999975,
+    double      expectedR = 0.234588,
                 calcR;
     
     int         diameter = 8,
@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
                 totaltime,
                 outputtime;
     
-    const int   localTrials = 100,
+    const int   localTrials = 1000000,
                 totalTrials = localTrials * numProcs;
     
     int         hits = 0;
@@ -68,13 +68,15 @@ int main(int argc, char *argv[])
          a          m           c           b
          
          */
-        printf("before fixing: %lu",G.edgesAlive.size());
+        //printf("before fixing: %lu",G.edgesAlive.size());
         //need to add more edges from the dead (MAKE ALIVE)
         
         
-        if (G.edgesAlive.size() < G.minCut)    //when t= 18, min cut is 6
+        if (G.edgesAlive.size() < G.minPath)    //when t= 18, min cut is 6
         {
-            randomNum = rand() % (G.maxAlive-G.edgesAlive.size()) + (G.minCut-G.edgesAlive.size());
+            randomNum = rand() % (G.maxAlive-G.edgesAlive.size()) + (G.minPath-G.edgesAlive.size());
+            
+            
             //printf(" number to add: %f",randomNum);
             for (int i = 0 ; i < randomNum; i++){
                 otherRandom = rand() % (G.edgesDead.size()-1);
@@ -87,8 +89,10 @@ int main(int argc, char *argv[])
         //need to remove edges from the alive (KILL)
         else if (G.edgesAlive.size() > G.maxAlive) //max alive is 38
         {
-            randomNum = rand() % (G.edgesAlive.size()-G.minCut) + (G.edgesAlive.size()-G.maxAlive);
-            printf(" number to delete: %f",randomNum);
+            randomNum = rand() % (G.edgesAlive.size()-G.minPath) + (G.edgesAlive.size()-G.maxAlive);
+            
+            
+            //printf(" number to delete: %f",randomNum);
             for (int i = 0 ; i < randomNum; i++){
                 otherRandom = rand() % (G.edgesAlive.size()-1);
                 G.edge[ G.edgesAlive[otherRandom] ].determined = 0;
@@ -96,7 +100,7 @@ int main(int argc, char *argv[])
                 G.edgesAlive.erase(G.edgesAlive.begin() + otherRandom);
             }
         }
-        printf(" after fixing: %lu\n",G.edgesAlive.size());
+        //printf(" after fixing: %lu\n",G.edgesAlive.size());
         
         if ( Dijkstra(source, destination, G, diameter) )
         {
@@ -123,10 +127,8 @@ int main(int argc, char *argv[])
         //plug in Values stored in G
         
         
-        double Ru = 1 - F(40-2, 40, 0.95);
         double Ri = F(6-1, 40, 0.95);
-        
-        
+        double Ru = 1 - F(40-2, 40, 0.95);
         
         calcR = (double) totalHits / totalTrials;
         

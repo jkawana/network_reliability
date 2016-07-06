@@ -30,7 +30,7 @@ private:
 public:
     int minCut;
     int maxAlive;
-    
+    int minPath;
     vector<int> edgesAlive;
     vector<int> edgesDead;
     
