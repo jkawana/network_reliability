@@ -14,9 +14,19 @@ double  combination(int x, int y);
 
 double  F(int lo, int hi, int m, double p);
 
+void comboSetUp(&dobule arr, int size, string file){
+	ifstream inFile(file.c_str());
+	for (int i =0; i<size; i++){
+		infill>>arr[i];
+	}
+}
+
+double combo40[41];
 
 int main(int argc, char *argv[])
 {
+
+	comboSetUp(combo40, 41, "5x5combo.txt");
     
     double      expectedR = 0.997224,
                 calcR;
@@ -59,30 +69,18 @@ int main(int argc, char *argv[])
         G.resetAliveEdges();
         for ( int j = 0; j < G.getTotalEdges(); j++ )
         {
-            randomNum = rand() % 100 + 1; //maybe put right into the function
+            randomNum = rand() % 100 + 1; 
             G.setSuccRate(randomNum, j);
         }
         
-        /*
-         
-         |          |           |           |
-         a          m           c           b
-         
-         */
-        //printf("before fixing: %lu",G.edgesAlive.size());
         //need to add more edges from the dead (MAKE ALIVE)
-        
-        
         if (G.edgesAlive.size() < G.minPath)    //when t= 18, min cut is 6
         {
             randomNum = rand() % (G.maxAlive-G.edgesAlive.size()) + (G.minPath-G.edgesAlive.size());
             
-            
-            //printf(" number to add: %f",randomNum);
             for (int i = 0 ; i < randomNum; i++){
                 otherRandom = rand() % (G.edgesDead.size()-1);
                 G.edge[ G.edgesDead[otherRandom] ].determined = 1;
-                //G.edgesAlive.push_back(G.edgesDead[otherRandom]); not really important but i figured incase of anything its here
                 G.edgesDead.erase(G.edgesDead.begin() + otherRandom);
             }
         }
@@ -91,27 +89,19 @@ int main(int argc, char *argv[])
         else if (G.edgesAlive.size() > G.maxAlive) //max alive is 38
         {
             randomNum = rand() % (G.edgesAlive.size()-G.minPath) + (G.edgesAlive.size()-G.maxAlive);
-            
-            
-            //printf(" number to delete: %f",randomNum);
+
             for (int i = 0 ; i < randomNum; i++){
                 otherRandom = rand() % (G.edgesAlive.size()-1);
                 G.edge[ G.edgesAlive[otherRandom] ].determined = 0;
-                //G.edgesDead.push_back(G.edgesAlive[otherRandom]); not really important but i figured incase of anything its here
                 G.edgesAlive.erase(G.edgesAlive.begin() + otherRandom);
             }
         }
-        //printf(" after fixing: %lu\n",G.edgesAlive.size());
         
         if ( Dijkstra(source, destination, G, diameter) )
         {
             hits++;
         }
     }
-    
-    
-    //able to make it to here. so something wrong with one of my functions?
-    printf("\nProcessor: %d     hits: %d\n\n", myRank, hits);
     
     end = MPI_Wtime();
     totaltime = end - start;
@@ -121,14 +111,8 @@ int main(int argc, char *argv[])
     
     if (myRank == 0)
     {
-        
-        //the one that we went over last isnt wokrin giwth
-        
-        
-        //plug in Values stored in G
-        
-               
-        double Rl = F(G.totalEdges-G.minCut+1,G.totalEdges, G.totalEdges, 0.95);
+
+        double Rl = F(G.totalEdges-G.minCut+1, G.totalEdges, G.totalEdges, 0.95);
         double Ru = 1 - F(0, G.minPath-1, G.totalEdges, 0.95);
 	 
         calcR = (double) totalHits / totalTrials;
@@ -137,8 +121,8 @@ int main(int argc, char *argv[])
         double finalResult = Rl + (Ru-Rl)*calcR ;
         
         
-	cout << "Rl, Ru = " << Rl << ' ' << Ru << endl;
-	cout << "MC calculated reliability = " << calcR << endl;
+		cout << "Rl, Ru = " << Rl << ' ' << Ru << endl;
+		cout << "MC calculated reliability = " << calcR << endl;
 
         cout << "\nTotal number of proccessors = " << numProcs << endl;
         cout << "Total number of hits = " << totalHits << endl;
@@ -146,7 +130,7 @@ int main(int argc, char *argv[])
         cout << "Total number of trials = " << totalTrials << endl;
         
         cout << "\nMonte Carlo Result " << endl;
-        cout << "5x5grid" << endl; //change
+        cout << "5x5grid" << endl; 
         cout << "Diameter Constraint = " << diameter << endl;
         cout << "Source Node = " << source << endl;
         cout << "Destination Node = " << destination << endl;
@@ -227,11 +211,9 @@ double factorial(int x)
     double sum=1;
     for (int i = 1; i<=x; i++) sum*=i;
     
-    //cout<<x<<' ' <<sum<<endl;
     return sum;
 }
 
-//https://en.wikipedia.org/wiki/Binomial_coefficient#Multiplicative_formula this will be nuch faster, no?
 double combination(int x, int y){
     return factorial(x) / (factorial(y)*factorial(x-y));
 }
