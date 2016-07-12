@@ -28,9 +28,9 @@ private:
     
 public:
     int totalEdges;                     // total number of edges.
-    int minCut;
-    int maxAlive;
-    int minPath;
+    //int minCut;
+    //int maxAlive;
+    //int minPath;
     vector<int> edgesAlive;
     vector<int> edgesDead;
     
@@ -61,12 +61,10 @@ public:
     }
     
     
-    void resetAliveEdges(){
-        while(edgesAlive.size()!=0){
-            edgesAlive.pop_back();
-        }
-        while(edgesDead.size()!=0){
-            edgesDead.pop_back();
+    void resetEdges(){
+        for (int i=0; i<totalEdges; i++)
+        {
+            edge[i].determined = 0;
         }
     }
     

@@ -4,9 +4,9 @@ Graph::Graph() // default construtor.
 {
     totalVertices = 0;
     totalEdges = 0;
-    minCut = 0;
-    minPath = 0;
-    maxAlive = 0;
+    //minCut = 0;
+    //minPath = 0;
+    //maxAlive = 0;
     //edgesAlive = 0;
     headnodes = NULL;
     edge = NULL;
@@ -70,9 +70,9 @@ void Graph::create()
             tempPtr->next->edgeID = i;
         }
     }
-    minPath = 6;
-    minCut = 2;
-    maxAlive = totalEdges - minCut;
+    //minPath = 6;
+    //minCut = 2;
+    //maxAlive = totalEdges - minCut;
     fin.close();	//close the file.
 }
 void Graph::create(const char *fileName)
@@ -94,7 +94,7 @@ void Graph::create(const char *fileName)
         {
             fin >> edgeV1 >> edgeV2 >> successRate;
             
-            edge[i].determined = -1;	//-1 means this edge is not determined yet.
+            edge[i].determined = 0;	//-1 means this edge is not determined yet.
             edge[i].successRate = successRate;
             
             tempPtr = &headnodes[edgeV1];	//adding to headnode[edgeV1] a link to edgeV2.
@@ -116,9 +116,9 @@ void Graph::create(const char *fileName)
             tempPtr->next->edgeID = i;
         }
     }
-    minPath = 6;
-    minCut = 2;
-    maxAlive = totalEdges - minCut;
+    //minPath = 6;
+    //minCut = 2;
+    //maxAlive = totalEdges - minCut;
     fin.close();	//close the file.
 }
 int Graph::getTotalVertices()

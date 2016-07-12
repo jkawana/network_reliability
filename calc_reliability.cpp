@@ -5,6 +5,7 @@
 #include <time.h>
 #include <math.h>
 #include <climits>
+#include <algorithm>
 
 bool    Dijkstra(int source, int destination, Graph G, int diameter);
 
@@ -14,32 +15,57 @@ double  combination(int x, int y);
 
 double  F(int lo, int hi, int m, double p);
 
-void comboSetUp(double * arr, int size, string file);
+double * combo;
 
-double combo40[41];
-
-int trialAmounts[40];
+int * trialAmounts;
 
 int O(int totalEdges, int edgesAlive, double prob);
 
-int S(int start, int end, int totalEdges, int edgesAlive, double prob);
+int S(int lo, int hi, int totalEdges, int subgraphSize, double prob);
 
 int main(int argc, char *argv[])
 {
 
-	//comboSetUp(combo40, 41, "5x5combo.txt");
+    //Get rid of edgesAlive and edgesDead
+
+    ifstream enviVar("environmentVariables.txt");
 	
-    double      expectedR = 0.997224,
-                calcR;
+    double      expectedR,
+                calcR,
+                edgeRel;
     
-    int         diameter = 8,
-                numVertices = 25, //possibly move to graph file
-                source = 0,
-                destination = 18,
+    int         diameter,
+                numVertices,  //possibly move to graph file
+                numEdges,
+                source,
+                destination,
                 totalHits = 0,
                 myRank,
-                numProcs;
+                numProcs,
+                minPath,
+                minCut;
     
+
+    string graphFile, combinationFile;
+
+    enviVar >> expectedR >> edgeRel >> diameter >> numVertices >> numEdges >> minPath;
+    enviVar >> minCut >> source >> destination >> graphFile >> combinationFile;
+
+    combo = new double[numEdges+1];
+    ifstream comboReader(combinationFile.c_str()); 
+    for (int i = 0 ; i < numEdges + 1; i++)
+    {
+        //combo[i]=combination(totalEdges, i);
+        comboReader >> combo[i];
+    }
+
+    trialAmounts = new int [numEdges - minCut - minPath + 1];
+    for (int i = 0 ; i < numEdges - minCut - minPath + 1; i++)
+    {
+        trialAmounts[i] = S(minPath, numEdges - minCut, numEdges, i, edgeRel);
+    }
+
+
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
     MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
@@ -51,10 +77,10 @@ int main(int argc, char *argv[])
                 totaltime,
                 outputtime;
     
-    const int   localTrials = 1,
+    const int   localTrials = 1000000,
                 totalTrials = localTrials * numProcs;
     
-    int         hits = 0;
+    int         hits = 0, indices[numEdges];
     
 
     //add mincut and minpath to input file
@@ -66,45 +92,30 @@ int main(int argc, char *argv[])
     
     srand(time(NULL)*myRank);
     
-    //looping over number of times
-    for ( int i = 0 ; i < localTrials; i++)
-    {
-        G.resetAliveEdges();
-        for ( int j = 0; j < G.getTotalEdges(); j++ )
-        {
-            randomNum = rand() % 100 + 1; 
-            G.setSuccRate(randomNum, j);
-        }
-        
-        //need to add more edges from the dead (MAKE ALIVE)
-        if (G.edgesAlive.size() < G.minPath)    //when t= 18, min cut is 6
-        {
-            randomNum = rand() % (G.maxAlive-G.edgesAlive.size()) + (G.minPath-G.edgesAlive.size());
-            
-            for (int i = 0 ; i < randomNum; i++){
-                otherRandom = rand() % (G.edgesDead.size()-1);
-                G.edge[ G.edgesDead[otherRandom] ].determined = 1;
-                G.edgesDead.erase(G.edgesDead.begin() + otherRandom);
-            }
-        }
-        
-        //need to remove edges from the alive (KILL)
-        else if (G.edgesAlive.size() > G.maxAlive) //max alive is 38
-        {
-            randomNum = rand() % (G.edgesAlive.size()-G.minPath) + (G.edgesAlive.size()-G.maxAlive);
 
-            for (int i = 0 ; i < randomNum; i++){
-                otherRandom = rand() % (G.edgesAlive.size()-1);
-                G.edge[ G.edgesAlive[otherRandom] ].determined = 0;
-                G.edgesAlive.erase(G.edgesAlive.begin() + otherRandom);
-            }
+    for (int i = 0; i < numEdges; i++)
+    {
+        indices[i]=i;
+    }
+
+
+    for (int i = 0 ; i < numEdges - minCut - minPath + 1; i++)
+    {
+        for (int j = 0; j < i; j++)
+        {
+            random_shuffle(&indices[0], &indices[numEdges - minCut - minPath]);   //our rand vs their rand???????
         }
-        
+        G.resetEdges(); //here, right?...
+        for (int k = 0; k < minPath + i; k++)
+        {
+            G.edge[k].determined = 1;
+        }
         if ( Dijkstra(source, destination, G, diameter) )
         {
             hits++;
         }
     }
+    
     
     end = MPI_Wtime();
     totaltime = end - start;
@@ -114,9 +125,8 @@ int main(int argc, char *argv[])
     
     if (myRank == 0)
     {
-        //GET RID OF MAGIC NUMBER FOR THE PROBABILITY
-        double Rl = F(G.totalEdges-G.minCut+1, G.totalEdges, G.totalEdges, 0.95);
-        double Ru = 1 - F(0, G.minPath-1, G.totalEdges, 0.95);
+        double Rl = F(numEdges-minCut+1, numEdges, numEdges, edgeRel);
+        double Ru = 1 - F(0, minPath-1, numEdges, edgeRel);
 	 
         calcR = (double) totalHits / totalTrials;
         
@@ -225,30 +235,24 @@ double F(int lo, int hi, int m, double p)
     double sum = 0;
     for ( int j = lo; j <= hi; j++ )
     {
-        sum += (combination(m,j) * pow(p,j) * pow((1-p),(m-j)));    //SHOULD THIS COMBINATION BE APART OF THE ARRAY????
+        sum += combo[j] * pow(p,j) * pow((1-p),(m-j));
     }
     return sum;
 }
 
-
-void comboSetUp(double * arr, int size, string file){
-	ifstream inFile(file.c_str());
-	for (int i =0; i<size; i++){
-		inFile>>arr[i];
-	}
-}
-
-int O(int totalEdges, int edgesAlive, double prob){
+int O(int totalEdges, int subgraphSize, double prob)
+{
 	//O(M) =  C(40,M) * (.95)^M * (.05) ^ (40-M).
-	return combo40(edgesAlive) * pow(prob, edgesAlive) * pow((1-prob), totalEdges - edgesAlive);
+	return combo[subgraphSize] * pow(prob, subgraphSize) * pow((1-prob), totalEdges - subgraphSize);
 }
 
-int S(int start, int end, int totalEdges, int edgesAlive, double prob){
+int S(int lo, int hi, int totalEdges, int subgraphSize, double prob)
+{
 
 	int divisor=0;
 
-	for (int i = start; i <=end; i++) divisor+=O(i, totalEdges, edgesAlive, prob);
+	for (int i = lo; i <= hi; i++) divisor += O(i, totalEdges, subgraphSize, prob);
 
-	return O(start, totalEdges, edgesAlive, prob) / divisor;
+	return O(lo, totalEdges, subgraphSize, prob) / divisor;
 
 }
