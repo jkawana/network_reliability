@@ -14,25 +14,26 @@ double  combination(int x, int y);
 
 double  F(int lo, int hi, int m, double p);
 
-void comboSetUp(&dobule arr, int size, string file){
-	ifstream inFile(file.c_str());
-	for (int i =0; i<size; i++){
-		infill>>arr[i];
-	}
-}
+void comboSetUp(double * arr, int size, string file);
 
 double combo40[41];
+
+int trialAmounts[40];
+
+int O(int totalEdges, int edgesAlive, double prob);
+
+int S(int start, int end, int totalEdges, int edgesAlive, double prob);
 
 int main(int argc, char *argv[])
 {
 
-	comboSetUp(combo40, 41, "5x5combo.txt");
-    
+	//comboSetUp(combo40, 41, "5x5combo.txt");
+	
     double      expectedR = 0.997224,
                 calcR;
     
     int         diameter = 8,
-                numVertices = 25,
+                numVertices = 25, //possibly move to graph file
                 source = 0,
                 destination = 18,
                 totalHits = 0,
@@ -50,11 +51,13 @@ int main(int argc, char *argv[])
                 totaltime,
                 outputtime;
     
-    const int   localTrials = 1000000,
+    const int   localTrials = 1,
                 totalTrials = localTrials * numProcs;
     
     int         hits = 0;
     
+
+    //add mincut and minpath to input file
     Graph G(numVertices);
     G.create();
     
@@ -111,15 +114,13 @@ int main(int argc, char *argv[])
     
     if (myRank == 0)
     {
-
+        //GET RID OF MAGIC NUMBER FOR THE PROBABILITY
         double Rl = F(G.totalEdges-G.minCut+1, G.totalEdges, G.totalEdges, 0.95);
         double Ru = 1 - F(0, G.minPath-1, G.totalEdges, 0.95);
 	 
         calcR = (double) totalHits / totalTrials;
         
-        
         double finalResult = Rl + (Ru-Rl)*calcR ;
-        
         
 		cout << "Rl, Ru = " << Rl << ' ' << Ru << endl;
 		cout << "MC calculated reliability = " << calcR << endl;
@@ -224,11 +225,30 @@ double F(int lo, int hi, int m, double p)
     double sum = 0;
     for ( int j = lo; j <= hi; j++ )
     {
-        sum += (combination(m,j) * pow(p,j) * pow((1-p),(m-j)));
+        sum += (combination(m,j) * pow(p,j) * pow((1-p),(m-j)));    //SHOULD THIS COMBINATION BE APART OF THE ARRAY????
     }
     return sum;
 }
 
 
+void comboSetUp(double * arr, int size, string file){
+	ifstream inFile(file.c_str());
+	for (int i =0; i<size; i++){
+		inFile>>arr[i];
+	}
+}
 
+int O(int totalEdges, int edgesAlive, double prob){
+	//O(M) =  C(40,M) * (.95)^M * (.05) ^ (40-M).
+	return combo40(edgesAlive) * pow(prob, edgesAlive) * pow((1-prob), totalEdges - edgesAlive);
+}
 
+int S(int start, int end, int totalEdges, int edgesAlive, double prob){
+
+	int divisor=0;
+
+	for (int i = start; i <=end; i++) divisor+=O(i, totalEdges, edgesAlive, prob);
+
+	return O(start, totalEdges, edgesAlive, prob) / divisor;
+
+}
