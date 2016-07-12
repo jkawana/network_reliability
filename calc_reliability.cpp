@@ -19,9 +19,9 @@ double * combo;
 
 int * trialAmounts;
 
-int O(int totalEdges, int edgesAlive, double prob);
+double O(int totalEdges, int edgesAlive, double prob);
 
-int S(int lo, int hi, int totalEdges, int subgraphSize, double prob);
+double S(int lo, int hi, int totalEdges, int subgraphSize, double prob);
 
 int main(int argc, char *argv[])
 {
@@ -47,28 +47,6 @@ int main(int argc, char *argv[])
     
 
     string graphFile, combinationFile;
-
-    enviVar >> expectedR >> edgeRel >> diameter >> numVertices >> numEdges >> minPath;
-    enviVar >> minCut >> source >> destination >> graphFile >> combinationFile;
-
-    combo = new double[numEdges+1];
-    ifstream comboReader(combinationFile.c_str()); 
-    for (int i = 0 ; i < numEdges + 1; i++)
-    {
-        //combo[i]=combination(totalEdges, i);
-        comboReader >> combo[i];
-    }
-
-    trialAmounts = new int [numEdges - minCut - minPath + 1];
-    for (int i = 0 ; i < numEdges - minCut - minPath + 1; i++)
-    {
-        trialAmounts[i] = S(minPath, numEdges - minCut, numEdges, i, edgeRel);
-    }
-
-
-    MPI_Init(&argc, &argv);
-    MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
-    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
     
     double      randomNum,
                 otherRandom,
@@ -81,6 +59,36 @@ int main(int argc, char *argv[])
                 totalTrials = localTrials * numProcs;
     
     int         hits = 0, indices[numEdges];
+
+
+    enviVar >> expectedR >> edgeRel >> diameter >> numVertices >> numEdges >> minPath;
+    enviVar >> minCut >> source >> destination >> graphFile >> combinationFile;
+
+    enviVar.close();
+
+    combo = new double[numEdges+1];
+    ifstream comboReader(combinationFile.c_str()); 
+    for (int i = 0 ; i < numEdges + 1; i++)
+    {
+        //combo[i]=combination(totalEdges, i);
+        comboReader >> combo[i];
+    }
+
+    comboReader.close();
+
+
+    trialAmounts = new int [numEdges - minCut - minPath + 1];
+    for (int i = 0 ; i < numEdges - minCut - minPath + 1; i++)
+    {
+        trialAmounts[i] = localTrials * S(minPath, numEdges - minCut, numEdges, minPath + i, edgeRel);
+	cout << "i = " << i << "  " << trialAmounts[i] << endl;
+    }
+
+
+
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
     
 
     //add mincut and minpath to input file
@@ -115,6 +123,8 @@ int main(int argc, char *argv[])
             hits++;
         }
     }
+
+    cout << "After trials" << endl;
     
     
     end = MPI_Wtime();
@@ -240,19 +250,19 @@ double F(int lo, int hi, int m, double p)
     return sum;
 }
 
-int O(int totalEdges, int subgraphSize, double prob)
+double O(int totalEdges, int subgraphSize, double prob)
 {
 	//O(M) =  C(40,M) * (.95)^M * (.05) ^ (40-M).
 	return combo[subgraphSize] * pow(prob, subgraphSize) * pow((1-prob), totalEdges - subgraphSize);
 }
 
-int S(int lo, int hi, int totalEdges, int subgraphSize, double prob)
+double S(int lo, int hi, int totalEdges, int subgraphSize, double prob)
 {
 
-	int divisor=0;
+	double divisor=0;
 
-	for (int i = lo; i <= hi; i++) divisor += O(totalEdges, subgraphSize-i, prob);
+	for (int i = lo; i <= hi; i++) divisor += O(totalEdges, i, prob);
 
-	return O(totalEdges, lo, prob) / divisor;
+	return O(totalEdges, subgraphSize, prob) / divisor;
 
 }
