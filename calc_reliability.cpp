@@ -251,8 +251,8 @@ int S(int lo, int hi, int totalEdges, int subgraphSize, double prob)
 
 	int divisor=0;
 
-	for (int i = lo; i <= hi; i++) divisor += O(i, totalEdges, subgraphSize, prob);
+	for (int i = lo; i <= hi; i++) divisor += O(totalEdges, subgraphSize-i, prob);
 
-	return O(lo, totalEdges, subgraphSize, prob) / divisor;
+	return O(totalEdges, lo, prob) / divisor;
 
 }
