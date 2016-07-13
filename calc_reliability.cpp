@@ -60,6 +60,14 @@ int main(int argc, char *argv[])
     
     int         hits = 0, indices[numEdges];
 
+    //so now that we know that everything gets done four times, maybe we should move diameter, vertecies, edges, edgeRel? to the graph file
+
+    //but i think keep the min cut, source, destination in the file theyre in now because even if the graph is the same, 
+    //different source and destination for the same graph, which would result in different mincut / min path
+
+    //so after doing all of this, create the graph so then we have acces to those varibles
+
+    //should we put local trials in the file as well?
 
     enviVar >> expectedR >> edgeRel >> diameter >> numVertices >> numEdges >> minPath;
     enviVar >> minCut >> source >> destination >> graphFile >> combinationFile;
@@ -76,14 +84,15 @@ int main(int argc, char *argv[])
 
     comboReader.close();
 
-
+    int monkey=0;
     trialAmounts = new int [numEdges - minCut - minPath + 1];
     for (int i = 0 ; i < numEdges - minCut - minPath + 1; i++)
     {
         trialAmounts[i] = localTrials * S(minPath, numEdges - minCut, numEdges, minPath + i, edgeRel);
-	cout << "i = " << i << "  " << trialAmounts[i] << endl;
+        monkey += trialAmounts[i];
+	    cout << "i = " << i+6 << "  " << trialAmounts[i] << endl;
     }
-
+    cout<<monkey<<endl;
 
 
     MPI_Init(&argc, &argv);
@@ -91,7 +100,6 @@ int main(int argc, char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
     
 
-    //add mincut and minpath to input file
     Graph G(numVertices);
     G.create();
     
@@ -109,9 +117,11 @@ int main(int argc, char *argv[])
 
     for (int i = 0 ; i < numEdges - minCut - minPath + 1; i++)
     {
+        //should this be up to trialAmounts[i] to get that many trials?
         for (int j = 0; j < i; j++)
         {
-            random_shuffle(&indices[0], &indices[numEdges - minCut - minPath]);   //our rand vs their rand???????
+            //note: need + 1 to get the last index to be swapped
+            random_shuffle(&indices[0], &indices[numEdges - minCut - minPath+1]);   //our rand vs their rand???????
         }
         G.resetEdges(); //here, right?...
         for (int k = 0; k < minPath + i; k++)
@@ -124,8 +134,6 @@ int main(int argc, char *argv[])
         }
     }
 
-    cout << "After trials" << endl;
-    
     
     end = MPI_Wtime();
     totaltime = end - start;
