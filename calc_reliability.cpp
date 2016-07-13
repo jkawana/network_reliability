@@ -118,19 +118,20 @@ int main(int argc, char *argv[])
     for (int i = 0 ; i < numEdges - minCut - minPath + 1; i++)
     {
         //should this be up to trialAmounts[i] to get that many trials?
-        for (int j = 0; j < i; j++)
+        for (int j = 0; j <= trialAmounts[i]; j++)
         {
             //note: need + 1 to get the last index to be swapped
             random_shuffle(&indices[0], &indices[numEdges - minCut - minPath+1]);   //our rand vs their rand???????
-        }
-        G.resetEdges(); //here, right?...
-        for (int k = 0; k < minPath + i; k++)
-        {
-            G.edge[k].determined = 1;
-        }
-        if ( Dijkstra(source, destination, G, diameter) )
-        {
-            hits++;
+            
+            G.resetEdges(); //here, right?...
+            for (int k = 0; k < minPath + i; k++)
+            {
+                G.edge[k].determined = 1;
+            }
+            if ( Dijkstra(source, destination, G, diameter) )
+            {
+                hits++;
+            }
         }
     }
 
