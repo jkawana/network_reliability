@@ -28,51 +28,19 @@ private:
     
 public:
     int totalEdges;                     // total number of edges.
-    //int minCut;
-    //int maxAlive;
-    //int minPath;
-    vector<int> edgesAlive;
-    vector<int> edgesDead;
-    
     Edge *edge;                         //ptr to array of the Edges and the indexes are the edge names.
     node *headnodes;                    //ptr to the headnodes.
     
     Graph();                            //set all data members to zero or null.
-    Graph(int nodes);                   //sets the totalVertices and the headnodes accordingly.
+    Graph(int nodes, const char *fileName);                   //sets the totalVertices and the headnodes accordingly.
     
     void setVertices(int nodes);        //sets the totalVertices and the headnodes accordingly.
     void create();                      //will setup the edge array according to the file "numbers.txt".
     void create(const char *fileName);	//will setup the edge array according to the parameterized fileName.
     int getTotalVertices();             //returns the totalVertices.
-    int getTotalEdges();                //returns the totalEdges.
-    
-    
-    
-    void setSuccRate(double rate, int index){
-        if ( rate > edge[index].successRate * 100 ){
-            edge[index].determined = 0;
-            edgesDead.push_back(index);
-        }
-        else
-        {
-            edge[index].determined = 1;
-            edgesAlive.push_back(index);
-        }
-    }
-    
-    
-    void resetEdges(){
-        for (int i=0; i<totalEdges; i++)
-        {
-            edge[i].determined = 0;
-        }
-    }
-    
-    int numEdgesAlive(){
-        return edgesAlive.size();
-    }
-    int numEdgesDead(){
-        return edgesDead.size();
-    }
+    int getTotalEdges();                //returns the totalEdges.    
+    void resetEdges();
+
+
 };
 #endif

@@ -3,9 +3,9 @@
 8
 25
 40
-6
+4
 2
 0
-18
+12
 numbers.txt
 5x5combo.txt

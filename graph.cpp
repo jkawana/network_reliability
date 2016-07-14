@@ -4,16 +4,13 @@ Graph::Graph() // default construtor.
 {
     totalVertices = 0;
     totalEdges = 0;
-    //minCut = 0;
-    //minPath = 0;
-    //maxAlive = 0;
-    //edgesAlive = 0;
     headnodes = NULL;
     edge = NULL;
 }
-Graph::Graph(int nodes) // construtor.
+Graph::Graph(int nodes, const char *fileName) // construtor.
 {
     setVertices(nodes);
+    create(fileName);
 }
 void Graph::setVertices(int nodes)
 {
@@ -29,52 +26,7 @@ void Graph::setVertices(int nodes)
         headnodes[i].edgeID = -1;	//all edgeID to itself is default -1.
     }
 }
-void Graph::create()
-{
-    int weight = 1;	//This assumes all edges weight = 1. Change accordingly.
-    int edgeV1, edgeV2;
-    double successRate;
-    node *tempPtr;
-    
-    ifstream fin;	//to read from a file.
-    fin.open("numbers.txt");
-    
-    fin >> totalEdges;
-    edge = new Edge[totalEdges];	//to setup the edge array.
-    
-    if (totalEdges > 0)
-    {
-        for (int i = 0; i < totalEdges; i++)
-        {
-            fin >> edgeV1 >> edgeV2 >> successRate;
-            
-            edge[i].determined = -1;	//-1 means this edge is not determined yet.
-            edge[i].successRate = successRate;
-            
-            tempPtr = &headnodes[edgeV1];	//adding to headnode[edgeV1] a link to edgeV2.
-            while (tempPtr->next != NULL)
-                tempPtr = tempPtr->next;
-            tempPtr->next = new node;
-            tempPtr->next->vertex = edgeV2;
-            tempPtr->next->next = NULL;
-            tempPtr->next->edgeWeight = weight;
-            tempPtr->next->edgeID = i;
-            
-            tempPtr = &headnodes[edgeV2];	//adding to headnode[edgeV2] a link to edgeV1.
-            while (tempPtr->next != NULL)
-                tempPtr = tempPtr->next;
-            tempPtr->next = new node;
-            tempPtr->next->vertex = edgeV1;
-            tempPtr->next->next = NULL;
-            tempPtr->next->edgeWeight = weight;
-            tempPtr->next->edgeID = i;
-        }
-    }
-    //minPath = 6;
-    //minCut = 2;
-    //maxAlive = totalEdges - minCut;
-    fin.close();	//close the file.
-}
+
 void Graph::create(const char *fileName)
 {
     int weight = 1;	//This assumes all edges weight = 1. Change accordingly.
@@ -116,9 +68,6 @@ void Graph::create(const char *fileName)
             tempPtr->next->edgeID = i;
         }
     }
-    //minPath = 6;
-    //minCut = 2;
-    //maxAlive = totalEdges - minCut;
     fin.close();	//close the file.
 }
 int Graph::getTotalVertices()
@@ -128,4 +77,11 @@ int Graph::getTotalVertices()
 int Graph::getTotalEdges()
 {
     return totalEdges;
+}
+
+void Graph::resetEdges(){
+    for (int i=0; i<totalEdges; i++)
+    {
+        edge[i].determined = 0;
+    }
 }

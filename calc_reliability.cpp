@@ -55,24 +55,26 @@ int main(int argc, char *argv[])
                 totaltime,
                 outputtime;
     
-    const int   localTrials = 1000000,
-                totalTrials = localTrials * numProcs;
+    const int   localTrials = 1000000;
     
-    int         hits = 0, indices[numEdges];
+    int         hits = 0, 
+                indices[numEdges],
+                totalTrials = 0;
 
-    //so now that we know that everything gets done four times, maybe we should move diameter, vertecies, edges, edgeRel? to the graph file
-
-    //but i think keep the min cut, source, destination in the file theyre in now because even if the graph is the same, 
-    //different source and destination for the same graph, which would result in different mincut / min path
-
-    //so after doing all of this, create the graph so then we have acces to those varibles
-
-    //should we put local trials in the file as well?
 
     enviVar >> expectedR >> edgeRel >> diameter >> numVertices >> numEdges >> minPath;
     enviVar >> minCut >> source >> destination >> graphFile >> combinationFile;
 
     enviVar.close();
+
+
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+
+    
+    Graph G(numVertices, graphFile.c_str());
+
 
     combo = new double[numEdges+1];
     ifstream comboReader(combinationFile.c_str()); 
@@ -84,24 +86,16 @@ int main(int argc, char *argv[])
 
     comboReader.close();
 
-    int monkey=0;
+
     trialAmounts = new int [numEdges - minCut - minPath + 1];
     for (int i = 0 ; i < numEdges - minCut - minPath + 1; i++)
     {
         trialAmounts[i] = localTrials * S(minPath, numEdges - minCut, numEdges, minPath + i, edgeRel);
-        monkey += trialAmounts[i];
-	    cout << "i = " << i+6 << "  " << trialAmounts[i] << endl;
+	totalTrials += trialAmounts[i];
+	//cout << "i = " << i+6 << "  " << trialAmounts[i] << endl;
     }
-    cout<<monkey<<endl;
 
-
-    MPI_Init(&argc, &argv);
-    MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
-    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
-    
-
-    Graph G(numVertices);
-    G.create();
+    totalTrials *= 4;
     
     MPI_Barrier(MPI_COMM_WORLD);
     start = MPI_Wtime();
@@ -117,17 +111,17 @@ int main(int argc, char *argv[])
 
     for (int i = 0 ; i < numEdges - minCut - minPath + 1; i++)
     {
-        //should this be up to trialAmounts[i] to get that many trials?
-        for (int j = 0; j <= trialAmounts[i]; j++)
+        for (int j = 0; j < trialAmounts[i]; j++)
         {
-            //note: need + 1 to get the last index to be swapped
             random_shuffle(&indices[0], &indices[numEdges - minCut - minPath+1]);   //our rand vs their rand???????
             
             G.resetEdges(); //here, right?...
+
             for (int k = 0; k < minPath + i; k++)
             {
-                G.edge[k].determined = 1;
+	      G.edge[indices[k]].determined = 1;
             }
+
             if ( Dijkstra(source, destination, G, diameter) )
             {
                 hits++;
@@ -135,15 +129,20 @@ int main(int argc, char *argv[])
         }
     }
 
+
+    cout << "Proc " << myRank << ": hits = " << hits << endl;
     
     end = MPI_Wtime();
     totaltime = end - start;
     
+
     MPI_Reduce(&totaltime, &outputtime, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     MPI_Reduce(&hits, &totalHits, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
     
+
     if (myRank == 0)
     {
+
         double Rl = F(numEdges-minCut+1, numEdges, numEdges, edgeRel);
         double Ru = 1 - F(0, minPath-1, numEdges, edgeRel);
 	 
@@ -156,7 +155,7 @@ int main(int argc, char *argv[])
 
         cout << "\nTotal number of proccessors = " << numProcs << endl;
         cout << "Total number of hits = " << totalHits << endl;
-        cout << "Each Proccessor performs " << localTrials << "  Trials" << endl;
+        cout << "Each Proccessor performs " << totalTrials/4 << "  Trials" << endl;
         cout << "Total number of trials = " << totalTrials << endl;
         
         cout << "\nMonte Carlo Result " << endl;
