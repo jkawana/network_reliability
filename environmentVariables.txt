@@ -7,5 +7,5 @@
 2
 0
 12
-numbers.txt
+5x5Grid.txt
 5x5combo.txt
