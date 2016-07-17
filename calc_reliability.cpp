@@ -15,18 +15,16 @@ double  combination(int x, int y);
 
 double  F(int lo, int hi, int m, double p);
 
-double * combo;
+double  *combo;
 
-int * trialAmounts;
+int     *trialAmounts;
 
-double O(int totalEdges, int edgesAlive, double prob);
+double  O(int totalEdges, int edgesAlive, double prob);
 
-double S(int lo, int hi, int totalEdges, int subgraphSize, double prob);
+double  S(int lo, int hi, int totalEdges, int subgraphSize, double prob);
 
 int main(int argc, char *argv[])
 {
-
-    //Get rid of edgesAlive and edgesDead
 
     ifstream enviVar("environmentVariables.txt");
 	
@@ -35,7 +33,7 @@ int main(int argc, char *argv[])
                 edgeRel;
     
     int         diameter,
-                numVertices,  //possibly move to graph file
+                numVertices, 
                 numEdges,
                 source,
                 destination,
@@ -46,7 +44,8 @@ int main(int argc, char *argv[])
                 minCut;
     
 
-    string graphFile, combinationFile;
+    string      graphFile, 
+                combinationFile;
     
     double      randomNum,
                 otherRandom,
@@ -75,7 +74,6 @@ int main(int argc, char *argv[])
     
     Graph G(numVertices, graphFile.c_str());
 
-
     combo = new double[numEdges+1];
     ifstream comboReader(combinationFile.c_str()); 
     for (int i = 0 ; i < numEdges + 1; i++)
@@ -91,11 +89,11 @@ int main(int argc, char *argv[])
     for (int i = 0 ; i < numEdges - minCut - minPath + 1; i++)
     {
         trialAmounts[i] = localTrials * S(minPath, numEdges - minCut, numEdges, minPath + i, edgeRel);
-	totalTrials += trialAmounts[i];
-	//cout << "i = " << i+6 << "  " << trialAmounts[i] << endl;
+	    totalTrials += trialAmounts[i];
+	    cout << "i = " << i+minPath << "  " << trialAmounts[i] << endl;
     }
-
-    totalTrials *= 4;
+    cout<<totalTrials<<endl;
+    totalTrials *= numProcs;
     
     MPI_Barrier(MPI_COMM_WORLD);
     start = MPI_Wtime();
@@ -115,11 +113,11 @@ int main(int argc, char *argv[])
         {
             random_shuffle(&indices[0], &indices[numEdges - minCut - minPath+1]);   //our rand vs their rand???????
             
-            G.resetEdges(); //here, right?...
+            G.resetEdges();
 
             for (int k = 0; k < minPath + i; k++)
             {
-	      G.edge[indices[k]].determined = 1;
+	           G.edge[indices[k]].determined = 1;
             }
 
             if ( Dijkstra(source, destination, G, diameter) )
@@ -243,7 +241,8 @@ double factorial(int x)
     return sum;
 }
 
-double combination(int x, int y){
+double combination(int x, int y)
+{
     return factorial(x) / (factorial(y)*factorial(x-y));
 }
 
@@ -260,7 +259,6 @@ double F(int lo, int hi, int m, double p)
 
 double O(int totalEdges, int subgraphSize, double prob)
 {
-	//O(M) =  C(40,M) * (.95)^M * (.05) ^ (40-M).
 	return combo[subgraphSize] * pow(prob, subgraphSize) * pow((1-prob), totalEdges - subgraphSize);
 }
 

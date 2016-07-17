@@ -79,7 +79,8 @@ int Graph::getTotalEdges()
     return totalEdges;
 }
 
-void Graph::resetEdges(){
+void Graph::resetEdges()
+{
     for (int i=0; i<totalEdges; i++)
     {
         edge[i].determined = 0;

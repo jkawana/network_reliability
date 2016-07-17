@@ -25,9 +25,9 @@ class Graph
 {
 private:
     int totalVertices;                  // total number of vertices.
+    int totalEdges;                     // total number of edges.
     
 public:
-    int totalEdges;                     // total number of edges.
     Edge *edge;                         //ptr to array of the Edges and the indexes are the edge names.
     node *headnodes;                    //ptr to the headnodes.
     
