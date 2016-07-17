@@ -8,4 +8,4 @@
 0
 12
 5x5Grid.txt
-5x5combo.txt
+5x5Combo.txt
