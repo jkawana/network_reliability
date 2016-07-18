@@ -6,7 +6,7 @@
 #include <math.h>
 #include <climits>
 #include <algorithm>
-
+#include <iomanip>
 bool    Dijkstra(int source, int destination, Graph G, int diameter);
 
 double  factorial(int x);
@@ -90,9 +90,9 @@ int main(int argc, char *argv[])
     {
         trialAmounts[i] = localTrials * S(minPath, numEdges - minCut, numEdges, minPath + i, edgeRel);
 	    totalTrials += trialAmounts[i];
-	    cout << "i = " << i+minPath << "  " << trialAmounts[i] << endl;
+	    //cout << "i = " << i+minPath << "  " << trialAmounts[i] << endl;
     }
-    cout<<totalTrials<<endl;
+    //cout<<totalTrials<<endl;
     totalTrials *= numProcs;
     
     MPI_Barrier(MPI_COMM_WORLD);
@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
 
         cout << "\nTotal number of proccessors = " << numProcs << endl;
         cout << "Total number of hits = " << totalHits << endl;
-        cout << "Each Proccessor performs " << totalTrials/4 << "  Trials" << endl;
+        cout << "Each Proccessor performs " << totalTrials/numProcs << "  Trials" << endl;
         cout << "Total number of trials = " << totalTrials << endl;
         
         cout << "\nMonte Carlo Result " << endl;
@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
         cout << "Diameter Constraint = " << diameter << endl;
         cout << "Source Node = " << source << endl;
         cout << "Destination Node = " << destination << endl;
-        cout << "Calculated Reliability = " << finalResult << endl;
+        cout << "Calculated Reliability = " << fixed<< setprecision(12) << finalResult << endl;
         cout << "Expected Reliability = " << expectedR << endl;
         cout << "Difference = " << (finalResult - expectedR) << endl;
         cout << "Time = " << outputtime << endl;
