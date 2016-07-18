@@ -109,17 +109,29 @@ int main(int argc, char *argv[])
 
     for (int i = 0 ; i < numEdges - minCut - minPath + 1; i++)
     {
+
         for (int j = 0; j < trialAmounts[i]; j++)
         {
-            random_shuffle(&indices[0], &indices[numEdges - minCut - minPath+1]);   //our rand vs their rand???????
+            
+
+            random_shuffle(&indices[0], &indices[numEdges]);   //our rand vs their rand???????
             
             G.resetEdges();
 
             for (int k = 0; k < minPath + i; k++)
             {
 	           G.edge[indices[k]].determined = 1;
+               //cout<<indices[k]<<' ';
+            }
+            
+            int counter =0;
+            for (int k=minPath + i; k < numEdges; k++) {
+                //cout<<indices[k]<<' ';    counter++;
             }
 
+            //cout << endl;
+            //cout<<"number of edges dead "<<counter<<endl;
+            
             if ( Dijkstra(source, destination, G, diameter) )
             {
                 hits++;
@@ -157,7 +169,7 @@ int main(int argc, char *argv[])
         cout << "Total number of trials = " << totalTrials << endl;
         
         cout << "\nMonte Carlo Result " << endl;
-        cout << "5x5grid" << endl; 
+        cout << graphFile << endl;
         cout << "Diameter Constraint = " << diameter << endl;
         cout << "Source Node = " << source << endl;
         cout << "Destination Node = " << destination << endl;
@@ -268,6 +280,8 @@ double S(int lo, int hi, int totalEdges, int subgraphSize, double prob)
 	double divisor=0;
 
 	for (int i = lo; i <= hi; i++) divisor += O(totalEdges, i, prob);
+
+    //cout<<"dividend: "<<O(totalEdges, subgraphSize, prob)<<' '<<"divisor: "<<divisor<<endl;
 
 	return O(totalEdges, subgraphSize, prob) / divisor;
 
