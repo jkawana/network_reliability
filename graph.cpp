@@ -31,7 +31,6 @@ void Graph::create(const char *fileName)
 {
     int weight = 1;	//This assumes all edges weight = 1. Change accordingly.
     int edgeV1, edgeV2;
-    double successRate;
     node *tempPtr;
     
     ifstream fin;	//to read from a file.
@@ -44,10 +43,9 @@ void Graph::create(const char *fileName)
     {
         for (int i = 0; i < totalEdges; i++)
         {
-            fin >> edgeV1 >> edgeV2 >> successRate;
+            fin >> edgeV1 >> edgeV2 ;
             
             edge[i].determined = 0;	//-1 means this edge is not determined yet.
-            edge[i].successRate = successRate;
             
             tempPtr = &headnodes[edgeV1];	//adding to headnode[edgeV1] a link to edgeV2.
             while (tempPtr->next != NULL)

@@ -2,7 +2,6 @@
 #define graph_h
 #include <iostream>
 #include <fstream>
-#include <vector>
 
 
 using namespace std;
@@ -10,14 +9,13 @@ using namespace std;
 struct Edge
 {
     int determined;                     //-1 is not determined, 0 is determined this edge failed, 1 is determined this edge exist.
-    double successRate;
 };
 
 struct node
 {
     int vertex;                         //vertex number aka name.
     node * next;                        //ptr to the next adjacent vertex of the headnode.
-    int edgeWeight;   //weight of this edge relative to the headnode, which is assumed to be 1. (changed accordingly in the implementation file.)
+    int edgeWeight;                     //weight of this edge relative to the headnode, which is assumed to be 1. (changed accordingly in the implementation file.)
     int edgeID;                         //real edgeID values range from 0 to totalEdge-1, max.
 };
 
